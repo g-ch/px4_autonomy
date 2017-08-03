@@ -1,0 +1,8 @@
+<launch>
+	<node pkg="px4_autonomy" name="offboard_center" type="offboard_center" output="screen">
+		<rosparam 
+	        file="$(find px4_autonomy)/cfg/settings.yaml"
+	        command="load" 
+		/>
+	</node>
+</launch>

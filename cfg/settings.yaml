@@ -1,0 +1,18 @@
+#coodinate type
+#0 stands for enu
+#1 stands for head coodinate, forward x, left y, up zz
+coor_type: 0
+
+#Take off height
+toff_height: 0.5
+
+#maximum velocity
+max_vx: 2.0
+max_vy: 2.0
+max_vz: 2.0
+max_yawrate: 1.0
+
+#PID parameters for position tracker
+pt_kp: 2.0
+pt_ki: 0.3
+pt_kd: 0.1

@@ -1,0 +1,39 @@
+cmake_minimum_required(VERSION 2.8.3)
+project(px4_autonomy)
+
+
+find_package(catkin REQUIRED)
+
+find_package(catkin REQUIRED COMPONENTS
+  message_generation
+  roscpp
+)
+
+add_message_files(FILES
+  Velocity.msg
+  Position.msg
+  Takeoff.msg
+)
+
+
+generate_messages(DEPENDENCIES
+  std_msgs
+)
+
+catkin_package(
+  CATKIN_DEPENDS
+  message_runtime
+)
+
+include_directories(
+# include
+${catkin_INCLUDE_DIRS}
+)
+
+add_executable(offboard_center
+  src/offboard_center.cpp
+)
+#add_dependencies(offboard_center ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(offboard_center
+  ${catkin_LIBRARIES}
+)
