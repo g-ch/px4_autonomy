@@ -1,10 +1,12 @@
 #coodinate type
 #0 stands for enu
 #1 stands for head coodinate, forward x, left y, up zz
-coor_type: 0
+coor_type: 0 #!!!!only enu is supported for now
 
 #Take off height
-toff_height: 0.5
+toff_height: 0.5 # should be positive
+#The height to judge if landed,  a litte larger than the real land height is recomended
+land_height: 0.1 # should be positive, a litte larger than the real land height is recomended
 
 #maximum velocity
 max_vx: 2.0
@@ -13,6 +15,14 @@ max_vz: 2.0
 max_yawrate: 1.0
 
 #PID parameters for position tracker
-pt_kp: 2.0
-pt_ki: 0.3
-pt_kd: 0.1
+pt_kp_xy: 2.0
+pt_ki_xy: 0.3
+pt_kd_xy: 0.1
+
+pt_kp_z: 2.0
+pt_ki_z: 0.3
+pt_kd_z: 0.1
+
+pt_kp_yaw: 0.1
+pt_ki_yaw: 0.03
+pt_kd_yaw: 0.005
