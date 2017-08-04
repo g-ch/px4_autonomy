@@ -10,6 +10,7 @@
 #include <std_msgs/UInt8.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
+#include "tf/message_filter.h"
 
 using namespace std;
 
@@ -31,13 +32,13 @@ float pid_calculate(float &kp, float &ki, float &kd, float &error, float &error_
 Eigen::Vector3d pos(0,0,0);
 Eigen::Vector3d vel(0,0,0);
 Eigen::Quaterniond att;
-float yaw = 0.0;
-float yaw_rate = 0.0;
+double yaw = 0.0;
+double yaw_rate = 0.0;
 
 Eigen::Vector3d pos_sp(0,0,0);
 Eigen::Vector3d vel_sp(0,0,0);
-float yaw_sp = 0.0;
-float yaw_rate_sp = 0.0;
+double yaw_sp = 0.0;
+double yaw_rate_sp = 0.0;
 
 bool take_off_flag = false;
 bool land_flag = false; 
@@ -119,13 +120,14 @@ int main(int argc, char **argv)
     ros::Subscriber vel_sp_sub = nh.subscribe("/px4/cmd_vel", 1,chatterCallback_cmd_vel);
     ros::Subscriber take_off_sub = nh.subscribe("/px4/cmd_takeoff", 1,chatterCallback_cmd_takeoff);
 
-    ros::Publisher vel_sp_pub = nh.advertise<geometry_msgs::TwistStamped>("/cmd_vel", 1);  
+    ros::Publisher vel_sp_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 1);  
     ros::Publisher status_pub = nh.advertise<std_msgs::UInt8>("/px4/status", 1); 
 
     ros::Rate loop_rate(LOOP_RATE);
     int time_bone = 0;
 
     geometry_msgs::TwistStamped cmd_vel; //the velocity sent to mavros
+    std_msgs::UInt8 status_value;
 
     /* PID storage values */
     float x_error = 0.0;
@@ -186,11 +188,11 @@ int main(int argc, char **argv)
                 cmd_vel.twist.angular.y = 0.0;
                 cmd_vel.twist.angular.z = 0.0;
 
-                cmd_vel.twist.linear.z = 0.1; //test
+                cmd_vel.twist.linear.z = 1.0; //test
 
                 vel_sp_pub.publish(cmd_vel);
 
-                if(pos(3) > toff_height - 0.1 ) status = 5;
+                if(pos(2) > toff_height - 0.1 ) status = 5;
 
                 break;
             }
@@ -204,11 +206,11 @@ int main(int argc, char **argv)
                 cmd_vel.twist.angular.y = 0.0;
                 cmd_vel.twist.angular.z = 0.0;
 
-                cmd_vel.twist.linear.z = -0.1; //test
+                cmd_vel.twist.linear.z = -1.0; //test
 
                 vel_sp_pub.publish(cmd_vel);
 
-                if(pos(3) < land_height) status = 1;
+                if(pos(2) < land_height) status = 1;
 
                 break;
             }
@@ -316,6 +318,9 @@ int main(int argc, char **argv)
             }
         }
 
+        status_value.data = status;
+        status_pub.publish(status_value);
+
 
         watch_dog(time_bone);
         ros::spinOnce();
@@ -364,25 +369,28 @@ int watch_dog(int &time_bone)
         if(offboard_ready) check1 = true;  //mode check
         else ROS_INFO("Please switch to offboard mode");
 
-        if(pose_sp_stamp != pose_stamp_last)  //position setpoint check
+        if(pose_sp_stamp != pose_sp_stamp_last)  //position setpoint check
         {
             check4 = true;
             p_sp_flag = true;
         }
         else p_sp_flag = false;
 
-        if(vel_sp_stamp != vel_stamp_last) //velocity setpoint check
+
+        if(vel_sp_stamp - vel_sp_stamp_last) //velocity setpoint check
         {
             check5 = true;
             v_sp_flag = true;
         }
         else v_sp_flag = false;
 
+        ROS_INFO("flag: p %d, v %d", (int)p_sp_flag, (int)v_sp_flag);
+
 
         if(check1 && (check4||check5)) offboard_flight_times++; //clock feed, just to know the offboard time
         else if(!check1) //having troubles connecting to uav
         {
-            if(pos(3) > 0.2) status = 5;
+            if(pos(2) > 0.2) status = 5;
             else status = 0;  
         }
         else if(status == 4)
@@ -413,14 +421,19 @@ void chatterCallback_local_pose(const geometry_msgs::PoseStamped &msg)
     att.z() = msg.pose.orientation.z;
     att.w() = msg.pose.orientation.w;
 
-    Eigen::Vector3d euler = att.toRotationMatrix().eulerAngles(2, 1, 0);  //test
-    yaw = euler(2);
+    //Eigen::Vector3d euler = att.toRotationMatrix().eulerAngles(2, 1, 0);  //test
+    //yaw = euler(0);
+
+    double roll, pitch;
+    tf::Quaternion q;
+    tf::quaternionMsgToTF(msg.pose.orientation, q);
+    tf::Matrix3x3 m(q);
+    m.getRPY(roll, pitch, yaw);
 }
 
 void chatterCallback_local_vel(const geometry_msgs::TwistStamped &msg)
 {
     vel_stamp = msg.header.stamp.toSec();
-
     vel(0) = msg.twist.linear.x;
     vel(1) = msg.twist.linear.y;
     vel(2) = msg.twist.linear.z;    
@@ -434,6 +447,7 @@ void chatterCallback_mode(const mavros_msgs::State &msg)
 
 void chatterCallback_cmd_pose(const px4_autonomy::Position &msg)
 {
+    pose_sp_stamp = msg.header.stamp.toSec();
     pos_sp(0) = msg.x;
     pos_sp(1) = msg.y;
     pos_sp(2) = msg.z;
@@ -442,6 +456,7 @@ void chatterCallback_cmd_pose(const px4_autonomy::Position &msg)
 
 void chatterCallback_cmd_vel(const px4_autonomy::Velocity &msg)
 {
+    vel_sp_stamp = msg.header.stamp.toSec();
     vel_sp(0) = msg.x;
     vel_sp(1) = msg.y;
     vel_sp(2) = msg.z;

@@ -15,14 +15,14 @@ max_vz: 2.0
 max_yawrate: 1.0
 
 #PID parameters for position tracker
-pt_kp_xy: 2.0
-pt_ki_xy: 0.3
-pt_kd_xy: 0.1
+pt_kp_xy: 0.2
+pt_ki_xy: 0.05
+pt_kd_xy: 0.01
 
-pt_kp_z: 2.0
-pt_ki_z: 0.3
-pt_kd_z: 0.1
+pt_kp_z: 0.2
+pt_ki_z: 0.05
+pt_kd_z: 0.01
 
-pt_kp_yaw: 0.1
-pt_ki_yaw: 0.03
-pt_kd_yaw: 0.005
+pt_kp_yaw: 0.05
+pt_ki_yaw: 0.003
+pt_kd_yaw: 0.0005

@@ -7,6 +7,7 @@ find_package(catkin REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
   message_generation
   roscpp
+  tf
 )
 
 add_message_files(FILES
@@ -33,7 +34,15 @@ ${catkin_INCLUDE_DIRS}
 add_executable(offboard_center
   src/offboard_center.cpp
 )
-#add_dependencies(offboard_center ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 target_link_libraries(offboard_center
+  ${catkin_LIBRARIES}
+)
+
+add_executable(test1
+  src/test.cpp
+)
+
+target_link_libraries(test1
   ${catkin_LIBRARIES}
 )
