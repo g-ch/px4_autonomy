@@ -168,7 +168,7 @@ int main(int argc, char **argv)
             {
                 cmd_vel.twist.linear.x = 0.0;
                 cmd_vel.twist.linear.y = 0.0;
-                cmd_vel.twist.linear.z = -0.05; //test
+                cmd_vel.twist.linear.z = -0.5; //test
                 cmd_vel.twist.angular.x = 0.0;
                 cmd_vel.twist.angular.y = 0.0;
                 cmd_vel.twist.angular.z = 0.0;
@@ -188,7 +188,9 @@ int main(int argc, char **argv)
                 cmd_vel.twist.angular.y = 0.0;
                 cmd_vel.twist.angular.z = 0.0;
 
-                cmd_vel.twist.linear.z = 1.0; //test
+                cmd_vel.twist.linear.z = (toff_height - pos(2)) * 1.0 + 0.1;
+                if(cmd_vel.twist.linear.z > 0.5) cmd_vel.twist.linear.z = 0.5;
+                //cmd_vel.twist.linear.z = 1.0; //test
 
                 vel_sp_pub.publish(cmd_vel);
 
@@ -206,7 +208,10 @@ int main(int argc, char **argv)
                 cmd_vel.twist.angular.y = 0.0;
                 cmd_vel.twist.angular.z = 0.0;
 
-                cmd_vel.twist.linear.z = -1.0; //test
+                cmd_vel.twist.linear.z = (land_height - pos(2)) * 1.0 - 0.2;
+                if(cmd_vel.twist.linear.z < -0.5) cmd_vel.twist.linear.z = -0.5;
+
+                //cmd_vel.twist.linear.z = -1.0; //test
 
                 vel_sp_pub.publish(cmd_vel);
 
