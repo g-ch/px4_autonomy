@@ -46,3 +46,11 @@ add_executable(test1
 target_link_libraries(test1
   ${catkin_LIBRARIES}
 )
+
+add_executable(takeoff_test
+  src/takeoff_test.cpp
+)
+
+target_link_libraries(takeoff_test
+  ${catkin_LIBRARIES}
+)

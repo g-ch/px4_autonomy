@@ -389,7 +389,7 @@ int watch_dog(int &time_bone)
         }
         else v_sp_flag = false;
 
-        ROS_INFO("flag: p %d, v %d", (int)p_sp_flag, (int)v_sp_flag);
+        //ROS_INFO("flag: p %d, v %d", (int)p_sp_flag, (int)v_sp_flag);
 
 
         if(check1 && (check4||check5)) offboard_flight_times++; //clock feed, just to know the offboard time

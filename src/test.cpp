@@ -13,7 +13,6 @@
 using namespace std;
 
 
-
 /* FOR GAZABO OFFBOARD ENABLE */
 mavros_msgs::State current_state;
 void state_cb(const mavros_msgs::State::ConstPtr& msg){
