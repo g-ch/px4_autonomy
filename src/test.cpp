@@ -140,7 +140,7 @@ int main(int argc, char **argv)
 		    			vel.yaw_rate = -0.2;
 		    			vel_pub.publish(vel);
 	    			}
-	    			else if(counter < 600) //to test velocity control with position tracker, 
+	    			/*else if(counter < 600) //to test velocity control with position tracker, 
 	    			{
 	    				if(!record_bool)
 	    				{
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
 		    			vel.z = 0;
 		    			vel.yaw_rate = 0;
 		    			vel_pub.publish(vel);
-	    			}
+	    			}*/
 	    			else if(counter < 700)  //hover 5 seconds
 	    			{
 	    				cout<<"hovering"<<endl;

@@ -11,6 +11,7 @@
 #include <Eigen/Core>
 #include <Eigen/Geometry>
 #include "tf/message_filter.h"
+#include "tf/transform_datatypes.h"
 
 using namespace std;
 
@@ -75,6 +76,7 @@ int main(int argc, char **argv)
 
     /* setting parameters definition */
     float coor_type;
+    float control_type;
     float toff_height;
     float land_height;
     float max_vx;
@@ -92,6 +94,7 @@ int main(int argc, char **argv)
     float pt_kd_yaw;
 
     dog_feed_times = LOOP_RATE/DOG_RATE;
+    float period =  1.f/(float)(LOOP_RATE); 
 
     /* read from settings.yaml */
     nh.getParam("/offboard_center/coor_type", coor_type);
@@ -110,6 +113,7 @@ int main(int argc, char **argv)
     nh.getParam("/offboard_center/pt_kp_yaw", pt_kp_yaw);
     nh.getParam("/offboard_center/pt_ki_yaw", pt_ki_yaw);
     nh.getParam("/offboard_center/pt_kd_yaw", pt_kd_yaw);
+    nh.getParam("/offboard_center/control_type", control_type);
     
 
     /* handle topics */
@@ -121,13 +125,25 @@ int main(int argc, char **argv)
     ros::Subscriber take_off_sub = nh.subscribe("/px4/cmd_takeoff", 1,chatterCallback_cmd_takeoff);
 
     ros::Publisher vel_sp_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 1);  
+    ros::Publisher pose_sp_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 1);
     ros::Publisher status_pub = nh.advertise<std_msgs::UInt8>("/px4/status", 1); 
 
     ros::Rate loop_rate(LOOP_RATE);
     int time_bone = 0;
 
     geometry_msgs::TwistStamped cmd_vel; //the velocity sent to mavros
+    geometry_msgs::PoseStamped cmd_pose;  //the position sent to mavros
     std_msgs::UInt8 status_value;
+
+    /*variable for position control type in px4*/
+    float x_record = 0.0;
+    float y_record = 0.0;
+    float z_record = 0.0;
+    float yaw_record = 0.0;
+    float pitch_record = 0.0;
+    float roll_record = 0.0;
+    bool if_record = true;
+
 
     /* PID storage values */
     float x_error = 0.0;
@@ -143,186 +159,463 @@ int main(int argc, char **argv)
     float yaw_error_1ast = 0.0;
     float yaw_error_acc = 0.0;
 
+    /* Variables for velocity setpoint in position  control mode*/
+    float acc_x = 0.0;
+    float acc_y = 0.0;
+    float acc_z = 0.0;
+    float acc_yaw = 0.0;
+
+
     /* Main loop */
     while(nh.ok())
     {
-        switch(status)
+        /*Velocity control type*/
+        if(control_type == 0.f)
         {
-            case 0:  //waiting for offboard mode
+            switch(status)
             {
-                cmd_vel.twist.linear.x = 0.0;
-                cmd_vel.twist.linear.y = 0.0;
-                cmd_vel.twist.linear.z = 0.0;
-                cmd_vel.twist.angular.x = 0.0;
-                cmd_vel.twist.angular.y = 0.0;
-                cmd_vel.twist.angular.z = 0.0;
-
-                vel_sp_pub.publish(cmd_vel);
-
-                if(offboard_ready) status = 1;
-                break;
-            }
-
-
-            case 1:  //wait on ground in offboard mode
-            {
-                cmd_vel.twist.linear.x = 0.0;
-                cmd_vel.twist.linear.y = 0.0;
-                cmd_vel.twist.linear.z = -0.5; //test
-                cmd_vel.twist.angular.x = 0.0;
-                cmd_vel.twist.angular.y = 0.0;
-                cmd_vel.twist.angular.z = 0.0;
-
-                vel_sp_pub.publish(cmd_vel);
-
-                if(take_off_flag) status = 2;
-                break;
-            }
-
-
-            case 2: //take off process
-            {
-                cmd_vel.twist.linear.x = 0.0;
-                cmd_vel.twist.linear.y = 0.0;
-                cmd_vel.twist.angular.x = 0.0;
-                cmd_vel.twist.angular.y = 0.0;
-                cmd_vel.twist.angular.z = 0.0;
-
-                cmd_vel.twist.linear.z = (toff_height - pos(2)) * 1.0 + 0.1;
-                if(cmd_vel.twist.linear.z > 0.5) cmd_vel.twist.linear.z = 0.5;
-                //cmd_vel.twist.linear.z = 1.0; //test
-
-                vel_sp_pub.publish(cmd_vel);
-
-                if(pos(2) > toff_height - 0.1 ) status = 5;
-
-                break;
-            }
-
-
-            case 3: //land process
-            {
-                cmd_vel.twist.linear.x = 0.0;
-                cmd_vel.twist.linear.y = 0.0;
-                cmd_vel.twist.angular.x = 0.0;
-                cmd_vel.twist.angular.y = 0.0;
-                cmd_vel.twist.angular.z = 0.0;
-
-                cmd_vel.twist.linear.z = (land_height - pos(2)) * 1.0 - 0.2;
-                if(cmd_vel.twist.linear.z < -0.5) cmd_vel.twist.linear.z = -0.5;
-
-                //cmd_vel.twist.linear.z = -1.0; //test
-
-                vel_sp_pub.publish(cmd_vel);
-
-                if(pos(2) < land_height) status = 1;
-
-                break;
-            }
-
-
-            case 4:
-            {
-                cmd_vel.twist.angular.x = 0.0;
-                cmd_vel.twist.angular.y = 0.0;
-
-                if(coor_type == 0.0) //enu coordinate
+                case 0:  //waiting for offboard mode
                 {
-                    if(v_sp_flag && !p_sp_flag) //only velocity
-                    {
-                        cmd_vel.twist.linear.x = vel_sp(0);
-                        cmd_vel.twist.linear.y = vel_sp(1);
-                        cmd_vel.twist.linear.z = vel_sp(2);
-                        cmd_vel.twist.angular.z = yaw_rate_sp;
-                    }
-                    else if(!v_sp_flag && p_sp_flag) //only position
-                    {
-                        x_error = pos_sp(0) - pos(0);
-                        y_error = pos_sp(1) - pos(1);
-                        z_error = pos_sp(2) - pos(2);
-                        yaw_error = yaw_sp - yaw;
-
-                        cmd_vel.twist.linear.x = pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, x_error, x_error_1ast, x_error_acc);
-                        cmd_vel.twist.linear.y = pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, y_error, y_error_1ast, y_error_acc);
-                        cmd_vel.twist.linear.z = pid_calculate(pt_kp_z, pt_ki_z, pt_kd_z, z_error, z_error_1ast, z_error_acc);
-                        cmd_vel.twist.angular.z = pid_calculate(pt_kp_yaw, pt_ki_yaw, pt_kd_yaw, yaw_error, yaw_error_1ast, yaw_error_acc);
-                    }
-                    else if(v_sp_flag && p_sp_flag) //velocity with position tracker
-                    {
-                        x_error = pos_sp(0) - pos(0);
-                        y_error = pos_sp(1) - pos(1);
-                        z_error = pos_sp(2) - pos(2);
-                        yaw_error = yaw_sp - yaw;
-
-                        cmd_vel.twist.linear.x = vel_sp(0) + pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, x_error, x_error_1ast, x_error_acc);
-                        cmd_vel.twist.linear.y = vel_sp(1) + pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, y_error, y_error_1ast, y_error_acc);
-                        cmd_vel.twist.linear.z = vel_sp(2) + pid_calculate(pt_kp_z, pt_ki_z, pt_kd_z, z_error, z_error_1ast, z_error_acc);
-                        cmd_vel.twist.angular.z = yaw_rate_sp + pid_calculate(pt_kp_yaw, pt_ki_yaw, pt_kd_yaw, yaw_error, yaw_error_1ast, yaw_error_acc);
-                    }
-                    else
-                    {
-                        /* no setpoints received, leave to handle by the watch dog */
-                    }
-                }
-                else  // head coordinate
-                {
-                    /*for now, just hover*/
                     cmd_vel.twist.linear.x = 0.0;
                     cmd_vel.twist.linear.y = 0.0;
                     cmd_vel.twist.linear.z = 0.0;
+                    cmd_vel.twist.angular.x = 0.0;
+                    cmd_vel.twist.angular.y = 0.0;
                     cmd_vel.twist.angular.z = 0.0;
+
+                    vel_sp_pub.publish(cmd_vel);
+
+                    if(offboard_ready) status = 1;
+                    break;
                 }
 
-                /*set_straint_abs(cmd_vel.twist.linear.x, max_vx);
-                set_straint_abs(cmd_vel.twist.linear.y, max_vy);
-                set_straint_abs(cmd_vel.twist.linear.z, max_vz);
-                set_straint_abs(cmd_vel.twist.angular.z, max_yawrate);*/
 
-                /* set constraints */
-                if(cmd_vel.twist.linear.x > max_vx) cmd_vel.twist.linear.x = max_vx;
-                else if(cmd_vel.twist.linear.x < -max_vx) cmd_vel.twist.linear.x = -max_vx;
+                case 1:  //wait on ground in offboard mode
+                {
+                    cmd_vel.twist.linear.x = 0.0;
+                    cmd_vel.twist.linear.y = 0.0;
+                    cmd_vel.twist.linear.z = -0.5; //test
+                    cmd_vel.twist.angular.x = 0.0;
+                    cmd_vel.twist.angular.y = 0.0;
+                    cmd_vel.twist.angular.z = 0.0;
 
-                if(cmd_vel.twist.linear.y > max_vy) cmd_vel.twist.linear.y = max_vy;
-                else if(cmd_vel.twist.linear.y < -max_vy) cmd_vel.twist.linear.y = -max_vy;
+                    vel_sp_pub.publish(cmd_vel);
 
-                if(cmd_vel.twist.linear.z > max_vz) cmd_vel.twist.linear.z = max_vz;
-                else if(cmd_vel.twist.linear.z < -max_vz) cmd_vel.twist.linear.z = -max_vz;
+                    if(take_off_flag) status = 2;
+                    break;
+                }
 
-                if(cmd_vel.twist.angular.z > max_yawrate) cmd_vel.twist.angular.z = max_yawrate;
-                else if(cmd_vel.twist.angular.z < -max_yawrate) cmd_vel.twist.angular.z = -max_yawrate;
 
-                vel_sp_pub.publish(cmd_vel);
+                case 2: //take off process
+                {
+                    cmd_vel.twist.linear.x = 0.0;
+                    cmd_vel.twist.linear.y = 0.0;
+                    cmd_vel.twist.angular.x = 0.0;
+                    cmd_vel.twist.angular.y = 0.0;
+                    cmd_vel.twist.angular.z = 0.0;
 
-                if(!v_sp_flag && !p_sp_flag) status = 5;
-                if(land_flag) status = 3;
+                    cmd_vel.twist.linear.z = (toff_height - pos(2)) * 1.0 + 0.1;
+                    if(cmd_vel.twist.linear.z > 0.5) cmd_vel.twist.linear.z = 0.5;
+                    //cmd_vel.twist.linear.z = 1.0; //test
 
-                break;
+                    vel_sp_pub.publish(cmd_vel);
+
+                    if(pos(2) > toff_height - 0.1 ) status = 5;
+
+                    break;
+                }
+
+
+                case 3: //land process
+                {
+                    cmd_vel.twist.linear.x = 0.0;
+                    cmd_vel.twist.linear.y = 0.0;
+                    cmd_vel.twist.angular.x = 0.0;
+                    cmd_vel.twist.angular.y = 0.0;
+                    cmd_vel.twist.angular.z = 0.0;
+
+                    cmd_vel.twist.linear.z = (land_height - pos(2)) * 1.0 - 0.2;
+                    if(cmd_vel.twist.linear.z < -0.5) cmd_vel.twist.linear.z = -0.5;
+
+                    //cmd_vel.twist.linear.z = -1.0; //test
+
+                    vel_sp_pub.publish(cmd_vel);
+
+                    if(pos(2) < land_height) status = 1;
+
+                    break;
+                }
+
+
+                case 4:
+                {
+                    cmd_vel.twist.angular.x = 0.0;
+                    cmd_vel.twist.angular.y = 0.0;
+
+                    if(coor_type == 0.f) //enu coordinate
+                    {
+                        if(v_sp_flag && !p_sp_flag) //only velocity
+                        {
+                            cmd_vel.twist.linear.x = vel_sp(0);
+                            cmd_vel.twist.linear.y = vel_sp(1);
+                            cmd_vel.twist.linear.z = vel_sp(2);
+                            cmd_vel.twist.angular.z = yaw_rate_sp;
+                        }
+                        else if(!v_sp_flag && p_sp_flag) //only position
+                        {
+                            x_error = pos_sp(0) - pos(0);
+                            y_error = pos_sp(1) - pos(1);
+                            z_error = pos_sp(2) - pos(2);
+                            yaw_error = yaw_sp - yaw;
+
+                            cmd_vel.twist.linear.x = pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, x_error, x_error_1ast, x_error_acc);
+                            cmd_vel.twist.linear.y = pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, y_error, y_error_1ast, y_error_acc);
+                            cmd_vel.twist.linear.z = pid_calculate(pt_kp_z, pt_ki_z, pt_kd_z, z_error, z_error_1ast, z_error_acc);
+                            cmd_vel.twist.angular.z = pid_calculate(pt_kp_yaw, pt_ki_yaw, pt_kd_yaw, yaw_error, yaw_error_1ast, yaw_error_acc);
+                        }
+                        else if(v_sp_flag && p_sp_flag) //velocity with position tracker
+                        {
+                            x_error = pos_sp(0) - pos(0);
+                            y_error = pos_sp(1) - pos(1);
+                            z_error = pos_sp(2) - pos(2);
+                            yaw_error = yaw_sp - yaw;
+
+                            cmd_vel.twist.linear.x = vel_sp(0) + pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, x_error, x_error_1ast, x_error_acc);
+                            cmd_vel.twist.linear.y = vel_sp(1) + pid_calculate(pt_kp_xy, pt_ki_xy, pt_kd_xy, y_error, y_error_1ast, y_error_acc);
+                            cmd_vel.twist.linear.z = vel_sp(2) + pid_calculate(pt_kp_z, pt_ki_z, pt_kd_z, z_error, z_error_1ast, z_error_acc);
+                            cmd_vel.twist.angular.z = yaw_rate_sp + pid_calculate(pt_kp_yaw, pt_ki_yaw, pt_kd_yaw, yaw_error, yaw_error_1ast, yaw_error_acc);
+                        }
+                        else
+                        {
+                            /* no setpoints received, leave to handle by the watch dog */
+                        }
+                    }
+                    else  // head coordinate
+                    {
+                        /*for now, just hover*/
+                        ROS_INFO("Wrong coordinate type");
+                        status = 5;
+                    }
+
+                    /*set_straint_abs(cmd_vel.twist.linear.x, max_vx);
+                    set_straint_abs(cmd_vel.twist.linear.y, max_vy);
+                    set_straint_abs(cmd_vel.twist.linear.z, max_vz);
+                    set_straint_abs(cmd_vel.twist.angular.z, max_yawrate);*/
+
+                    /* set constraints */
+                    if(cmd_vel.twist.linear.x > max_vx) cmd_vel.twist.linear.x = max_vx;
+                    else if(cmd_vel.twist.linear.x < -max_vx) cmd_vel.twist.linear.x = -max_vx;
+
+                    if(cmd_vel.twist.linear.y > max_vy) cmd_vel.twist.linear.y = max_vy;
+                    else if(cmd_vel.twist.linear.y < -max_vy) cmd_vel.twist.linear.y = -max_vy;
+
+                    if(cmd_vel.twist.linear.z > max_vz) cmd_vel.twist.linear.z = max_vz;
+                    else if(cmd_vel.twist.linear.z < -max_vz) cmd_vel.twist.linear.z = -max_vz;
+
+                    if(cmd_vel.twist.angular.z > max_yawrate) cmd_vel.twist.angular.z = max_yawrate;
+                    else if(cmd_vel.twist.angular.z < -max_yawrate) cmd_vel.twist.angular.z = -max_yawrate;
+
+                    vel_sp_pub.publish(cmd_vel);
+
+                    if(!v_sp_flag && !p_sp_flag) status = 5;
+                    if(land_flag) status = 3;
+
+                    break;
+                }
+
+
+                case 5:  //hover mode
+                {
+                    cmd_vel.twist.linear.x = 0.0;
+                    cmd_vel.twist.linear.y = 0.0;
+                    cmd_vel.twist.linear.z = 0.0;
+                    cmd_vel.twist.angular.x = 0.0;
+                    cmd_vel.twist.angular.y = 0.0;
+                    cmd_vel.twist.angular.z = 0.0;
+
+                    vel_sp_pub.publish(cmd_vel);
+
+                    if(v_sp_flag || p_sp_flag) status = 4;
+                    if(land_flag) status = 3;
+
+                    break;
+                }
+                default:
+                {
+                    ROS_INFO("What the hell is this status? It should not happen.");
+                    break;
+                }
             }
 
-
-            case 5:  //hover mode
-            {
-                cmd_vel.twist.linear.x = 0.0;
-                cmd_vel.twist.linear.y = 0.0;
-                cmd_vel.twist.linear.z = 0.0;
-                cmd_vel.twist.angular.x = 0.0;
-                cmd_vel.twist.angular.y = 0.0;
-                cmd_vel.twist.angular.z = 0.0;
-
-                vel_sp_pub.publish(cmd_vel);
-
-                if(v_sp_flag || p_sp_flag) status = 4;
-                if(land_flag) status = 3;
-
-                break;
-            }
-            default:
-            {
-                ROS_INFO("What the hell is this status? It should not happen.");
-                break;
-            }
         }
 
+        /*Position control type*/
+        else if(control_type == 1.f)
+        {
+            switch(status)
+            {
+                case 0:  //waiting for offboard mode
+                {
+                    if(if_record)
+                    {
+                        x_record = pos(0);
+                        y_record = pos(1);
+                        z_record = pos(2);
+                        yaw_record = yaw;
+
+                        if_record = false;
+                    }
+
+                    cmd_pose.pose.position.x = x_record;
+                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.z = z_record;
+
+                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+
+                    pose_sp_pub.publish(cmd_pose);
+
+                    if(offboard_ready)
+                    {
+                        status = 1;
+                        if_record = true;
+                    } 
+                    break;
+                }
+
+
+                case 1:  //wait on ground in offboard mode
+                {
+                    if(if_record)
+                    {
+                        x_record = pos(0);
+                        y_record = pos(1);
+                        z_record = pos(2);
+                        yaw_record = yaw;
+
+                        if_record = false;
+                    }
+
+                    cmd_pose.pose.position.x = x_record;
+                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.z = -0.1;
+
+                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+
+                    pose_sp_pub.publish(cmd_pose);
+
+                    if(take_off_flag)
+                    {
+                        status = 2;
+                        if_record = true;
+                    } 
+                    break;
+                }
+
+
+                case 2: //take off process
+                {
+                    if(if_record)
+                    {
+                        x_record = pos(0);
+                        y_record = pos(1);
+                        z_record = pos(2);
+                        yaw_record = yaw;
+
+                        if_record = false;
+                    }
+
+                    cmd_pose.pose.position.x = x_record;
+                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.z = pos(2) + 0.2f;
+
+                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+
+                    pose_sp_pub.publish(cmd_pose);
+
+                    if(pos(2) > toff_height - 0.1 )
+                    {
+                        status = 5;
+                        if_record = true;
+                    } 
+
+                    break;
+                }
+
+
+                case 3: //land process
+                {
+
+                    if(if_record)
+                    {
+                        x_record = pos(0);
+                        y_record = pos(1);
+                        z_record = pos(2);
+                        yaw_record = yaw;
+
+                        if_record = false;
+                    }
+
+                    cmd_pose.pose.position.x = x_record;
+                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.z = pos(2) - 0.2f;
+
+                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+
+                    pose_sp_pub.publish(cmd_pose);
+
+                    if(pos(2) < land_height)
+                    {
+                        status = 1;
+                        if_record = true;
+                    } 
+
+                    break;
+                }
+
+
+                case 4:
+                {
+                    if(coor_type == 0.f) //enu coordinate
+                    {
+                        
+                        if(v_sp_flag && !p_sp_flag) //only velocity
+                        {
+                            if(if_record)
+                            {
+                                x_record = pos(0);
+                                y_record = pos(1);
+                                z_record = pos(2);
+                                yaw_record = yaw;
+
+                                if_record = false;
+                            }
+
+                            acc_x += vel_sp(0) * period; 
+                            acc_y += vel_sp(1) * period;
+                            acc_z += vel_sp(2) * period;
+                            acc_yaw += yaw_rate_sp * period;
+
+                            cmd_pose.pose.position.x = x_record + acc_x;
+                            cmd_pose.pose.position.y = y_record + acc_y;
+                            cmd_pose.pose.position.z = z_record + acc_z;
+                            float temp_yaw = yaw_record + acc_yaw;
+
+                            tf::Quaternion cmd_q(temp_yaw, pitch_record, roll_record);
+                            tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                            pose_sp_pub.publish(cmd_pose);
+                            
+                        }
+                        else if(!v_sp_flag && p_sp_flag) //only position
+                        {
+                            cmd_pose.pose.position.x = pos_sp(0);
+                            cmd_pose.pose.position.y = pos_sp(1);
+                            cmd_pose.pose.position.z = pos_sp(2);
+
+                            tf::Quaternion cmd_q(yaw_sp, pitch_record, roll_record);
+                            tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                            pose_sp_pub.publish(cmd_pose);
+                        }
+                        else if(v_sp_flag && p_sp_flag) //velocity with position tracker
+                        {
+                            ROS_INFO("Can not handle both velocity and position setpoint in position control mode!");
+                            status = 5;
+                        }
+                        else
+                        {
+                            /* no setpoints received, leave to handle by the watch dog */
+                            if_record = true;
+                            acc_x = 0.0;
+                            acc_y = 0.0;
+                            acc_z = 0.0;
+                            acc_yaw = 0.0;          
+                        }
+                    }
+                    else  // head coordinate
+                    {
+                        /*for now, just hover*/
+                        ROS_INFO("Wrong coordinate type");
+                        status = 5;
+                    }
+
+                    /*set_straint_abs(cmd_vel.twist.linear.x, max_vx);
+                    set_straint_abs(cmd_vel.twist.linear.y, max_vy);
+                    set_straint_abs(cmd_vel.twist.linear.z, max_vz);
+                    set_straint_abs(cmd_vel.twist.angular.z, max_yawrate);*/
+
+                    /* set constraints */
+                    if(cmd_vel.twist.linear.x > max_vx) cmd_vel.twist.linear.x = max_vx;
+                    else if(cmd_vel.twist.linear.x < -max_vx) cmd_vel.twist.linear.x = -max_vx;
+
+                    if(cmd_vel.twist.linear.y > max_vy) cmd_vel.twist.linear.y = max_vy;
+                    else if(cmd_vel.twist.linear.y < -max_vy) cmd_vel.twist.linear.y = -max_vy;
+
+                    if(cmd_vel.twist.linear.z > max_vz) cmd_vel.twist.linear.z = max_vz;
+                    else if(cmd_vel.twist.linear.z < -max_vz) cmd_vel.twist.linear.z = -max_vz;
+
+                    if(cmd_vel.twist.angular.z > max_yawrate) cmd_vel.twist.angular.z = max_yawrate;
+                    else if(cmd_vel.twist.angular.z < -max_yawrate) cmd_vel.twist.angular.z = -max_yawrate;
+
+                    vel_sp_pub.publish(cmd_vel);
+
+                    if(!v_sp_flag && !p_sp_flag) status = 5;
+                    if(land_flag) status = 3;
+
+                    break;
+                }
+
+
+                case 5:  //hover mode
+                {
+                    if(if_record)
+                    {
+                        x_record = pos(0);
+                        y_record = pos(1);
+                        z_record = pos(2);
+                        yaw_record = yaw;
+
+                        if_record = false;
+                    }
+
+                    cmd_pose.pose.position.x = x_record;
+                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.z = z_record;
+
+                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+
+                    pose_sp_pub.publish(cmd_pose);
+
+                    if((!v_sp_flag && p_sp_flag) || (v_sp_flag && !p_sp_flag))
+                    {
+                        status = 4;
+                        if_record = true;
+                    } 
+                    if(land_flag) 
+                    {
+                        status = 3;
+                        if_record = true;
+                    }
+                        
+
+                    break;
+                }
+                default:
+                {
+                    ROS_INFO("What the hell is this status? It should not happen.");
+                    break;
+                }
+            }   
+        }
+        else
+        {
+            ROS_INFO("Unknown control type!");
+        }
+
+        
         status_value.data = status;
         status_pub.publish(status_value);
 

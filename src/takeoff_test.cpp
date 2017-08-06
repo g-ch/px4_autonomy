@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 	    		{	
 	    			counter ++;
 
-	    			if(counter > 100)  //to test position control
+	    			if(counter > 200)  //to test position control
 	    			{
 	    				tf_val.take_off = 2; //land
 	    				takeoff_pub.publish(tf_val);
