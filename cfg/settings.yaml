@@ -7,10 +7,10 @@ coor_type: 0 #!!!!only enu is supported for now
 #0 stands for velocity control
 #1 stands for position control
 #NOTE: you must blacklist another type in mavros/mavros/launch/px4_pluginlists.yaml
-control_type: 1  #position control is more stable!
+control_type: 1 #position control is more stable!
 
 #Take off height
-toff_height: 0.5 # should be positive
+toff_height: 1.0 # should be positive
 #The height to judge if landed,  a litte larger than the real land height is recomended
 land_height: 0.1 # should be positive, a litte larger than the real land height is recomended
 

@@ -356,16 +356,6 @@ int main(int argc, char **argv)
             {
                 case 0:  //waiting for offboard mode
                 {
-                    if(if_record)
-                    {
-                        x_record = pos(0);
-                        y_record = pos(1);
-                        z_record = pos(2);
-                        yaw_record = yaw;
-
-                        if_record = false;
-                    }
-
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
                     cmd_pose.pose.position.z = z_record;
@@ -378,7 +368,6 @@ int main(int argc, char **argv)
                     if(offboard_ready)
                     {
                         status = 1;
-                        if_record = true;
                     } 
                     break;
                 }
@@ -398,7 +387,7 @@ int main(int argc, char **argv)
 
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
-                    cmd_pose.pose.position.z = -0.1;
+                    cmd_pose.pose.position.z = z_record;
 
                     tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
@@ -432,14 +421,16 @@ int main(int argc, char **argv)
 
                     tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
-
-                    pose_sp_pub.publish(cmd_pose);
+           
 
                     if(pos(2) > toff_height - 0.1 )
                     {
+                        cmd_pose.pose.position.z = pos(2);
                         status = 5;
                         if_record = true;
                     } 
+
+                    pose_sp_pub.publish(cmd_pose);
 
                     break;
                 }
@@ -522,7 +513,7 @@ int main(int argc, char **argv)
                         else if(v_sp_flag && p_sp_flag) //velocity with position tracker
                         {
                             ROS_INFO("Can not handle both velocity and position setpoint in position control mode!");
-                            status = 5;
+                            //status = 5;
                         }
                         else
                         {
@@ -688,8 +679,9 @@ int watch_dog(int &time_bone)
         if(check1 && (check4||check5)) offboard_flight_times++; //clock feed, just to know the offboard time
         else if(!check1) //having troubles connecting to uav
         {
-            if(pos(2) > 0.2) status = 5;
-            else status = 0;  
+            status = 0;
+            //if(pos(2) > 0.2) status = 5;
+            //else status = 0;  
         }
         else if(status == 4)
         {
