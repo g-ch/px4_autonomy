@@ -16,7 +16,7 @@
 using namespace std;
 
 #define LOOP_RATE 20
-#define DOG_RATE 2
+#define DOG_RATE 1
 
 /* functions declaration */
 void chatterCallback_local_pose(const geometry_msgs::PoseStamped &msg);
@@ -340,6 +340,7 @@ int main(int argc, char **argv)
 
                     break;
                 }
+
                 default:
                 {
                     ROS_INFO("What the hell is this status? It should not happen.");
@@ -356,11 +357,11 @@ int main(int argc, char **argv)
             {
                 case 0:  //waiting for offboard mode
                 {
-                    cmd_pose.pose.position.x = x_record;
-                    cmd_pose.pose.position.y = y_record;
-                    cmd_pose.pose.position.z = z_record;
+                    cmd_pose.pose.position.x = pos(0);
+                    cmd_pose.pose.position.y = pos(1);
+                    cmd_pose.pose.position.z = pos(2);
 
-                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    tf::Quaternion cmd_q(yaw, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
                     pose_sp_pub.publish(cmd_pose);
@@ -382,12 +383,18 @@ int main(int argc, char **argv)
                         z_record = pos(2);
                         yaw_record = yaw;
 
+                        cout<<"z_rec"<<z_record<<endl;
+
                         if_record = false;
                     }
 
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
-                    cmd_pose.pose.position.z = z_record;
+
+                    if(pos(2) < 0.1)
+                        cmd_pose.pose.position.z = -0.1;
+                    else
+                        cmd_pose.pose.position.z = z_record;
 
                     tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
@@ -412,18 +419,25 @@ int main(int argc, char **argv)
                         z_record = pos(2);
                         yaw_record = yaw;
 
+                        cout<<"z_rec"<<z_record<<endl;
+
                         if_record = false;
                     }
 
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
-                    cmd_pose.pose.position.z = pos(2) + 0.2f;
+
+                    float add_height = (toff_height +0.1f - pos(2)) * 1.f;
+                    if(add_height > 0.5f) add_height = 0.5f;
+                    else if(add_height < 0.2f) add_height = 0.2f;
+
+                    cmd_pose.pose.position.z = pos(2) + add_height;
 
                     tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
            
 
-                    if(pos(2) > toff_height - 0.1 )
+                    if(pos(2) > toff_height - 0.1f )
                     {
                         cmd_pose.pose.position.z = pos(2);
                         status = 5;
@@ -446,12 +460,19 @@ int main(int argc, char **argv)
                         z_record = pos(2);
                         yaw_record = yaw;
 
+                        cout<<"z_rec"<<z_record<<endl;
+
                         if_record = false;
                     }
 
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
-                    cmd_pose.pose.position.z = pos(2) - 0.2f;
+
+                    float dec_height = 0.f - (pos(2) + 0.1f)* 1.0f;
+                    if(dec_height > -0.1f) dec_height = -0.2f;
+                    else if(dec_height < -0.4f) dec_height = -0.4f;
+
+                    cmd_pose.pose.position.z = pos(2) + dec_height;
 
                     tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
@@ -483,6 +504,8 @@ int main(int argc, char **argv)
                                 yaw_record = yaw;
 
                                 if_record = false;
+
+                                cout<<"z_rec"<<z_record<<endl;
                             }
 
                             acc_x += vel_sp(0) * period; 
@@ -569,6 +592,7 @@ int main(int argc, char **argv)
                         yaw_record = yaw;
 
                         if_record = false;
+                        cout<<"z_rec"<<z_record<<endl;
                     }
 
                     cmd_pose.pose.position.x = x_record;
@@ -666,7 +690,7 @@ int watch_dog(int &time_bone)
         else p_sp_flag = false;
 
 
-        if(vel_sp_stamp - vel_sp_stamp_last) //velocity setpoint check
+        if(vel_sp_stamp != vel_sp_stamp_last) //velocity setpoint check
         {
             check5 = true;
             v_sp_flag = true;

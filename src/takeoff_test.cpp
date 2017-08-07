@@ -74,6 +74,7 @@ int main(int argc, char **argv)
 	    		}
 
 	    		case 4:
+	    		case 5:
 	    		{	
 	    			counter ++;
 
@@ -85,16 +86,6 @@ int main(int argc, char **argv)
 	    				ROS_INFO("Landing");
 	    			}
 	    			
-	    			break;
-	    		}
-	    		case 5:  //hover mode in px4_autonomy. may not be used here.
-	    		{
-	    			vel.header.stamp = ros::Time::now();
-	    			vel.x = 0;
-	    			vel.y = 0;
-	    			vel.z = 0;
-	    			vel.yaw_rate = 0;
-	    			vel_pub.publish(vel);
 	    			break;
 	    		}
 	    	}

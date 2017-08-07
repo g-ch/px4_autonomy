@@ -119,25 +119,33 @@ int main(int argc, char **argv)
 	    		}
 
 	    		case 4:
+	    		case 5:  
 	    		{	
 	    			counter ++;
 
-	    			if(counter < 200)  //to test position control
+	    			if(counter < 100)  //to test position control
 	    			{
+	    				/*vel.header.stamp = ros::Time::now();
+		    			vel.x = -0.5;
+		    			vel.y = -1.0;
+		    			vel.z = 0;
+		    			vel.yaw_rate = 0.0;
+		    			vel_pub.publish(vel);*/
+
 	    				pose.header.stamp = ros::Time::now();
-		    			pose.x = counter/100;
-		    			pose.y = 0;
-		    			pose.z = 0.6;
+		    			pose.x = counter/20.f;
+		    			pose.y = 0.0;
+		    			pose.z = 1.0;
 		    			pose.yaw = 0.0;
 		    			pose_pub.publish(pose);
 	    			}
-	    			else if(counter < 400)  //to test velocity control
+	    			else if(counter < 400 && counter > 300)  //to test velocity control
 	    			{
 	    				vel.header.stamp = ros::Time::now();
 		    			vel.x = 1.0;
 		    			vel.y = 0.5;
 		    			vel.z = 0;
-		    			vel.yaw_rate = -0.2;
+		    			vel.yaw_rate = 0.0;
 		    			vel_pub.publish(vel);
 	    			}
 	    			/*else if(counter < 600) //to test velocity control with position tracker, 
@@ -175,16 +183,6 @@ int main(int argc, char **argv)
 	    				flight_over = true;
 	    			}
 	    			
-	    			break;
-	    		}
-	    		case 5:  //hover mode in px4_autonomy. may not be used here.
-	    		{
-	    			vel.header.stamp = ros::Time::now();
-	    			vel.x = 0;
-	    			vel.y = 0;
-	    			vel.z = 0;
-	    			vel.yaw_rate = 0;
-	    			vel_pub.publish(vel);
 	    			break;
 	    		}
 	    	}
