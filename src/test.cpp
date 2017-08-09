@@ -125,17 +125,19 @@ int main(int argc, char **argv)
 
 	    			if(counter < 100)  //to test position control
 	    			{
-	    				/*vel.header.stamp = ros::Time::now();
-		    			vel.x = -0.5;
-		    			vel.y = -1.0;
+	    				vel.header.stamp = ros::Time::now();
+		    			vel.x = 0.0;
+		    			vel.y = 0.5;
 		    			vel.z = 0;
 		    			vel.yaw_rate = 0.0;
-		    			vel_pub.publish(vel);*/
-
+		    			vel_pub.publish(vel);
+	    			}
+	    			else if(counter < 300)
+	    			{
 	    				pose.header.stamp = ros::Time::now();
-		    			pose.x = counter/20.f;
-		    			pose.y = 0.0;
-		    			pose.z = 1.0;
+		    			pose.x = (counter-100.0)/20.f;
+		    			pose.y = 5.0;
+		    			pose.z = 3.0;
 		    			pose.yaw = 0.0;
 		    			pose_pub.publish(pose);
 	    			}

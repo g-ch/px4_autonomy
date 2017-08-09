@@ -509,12 +509,12 @@ int main(int argc, char **argv)
                 {
                     if(coor_type == 0.f) //enu coordinate
                     {
-                        /* control state:
-                        0: no setpoint
-                        1: vel setpoint
-                        2: pose setpoint
-                        3: both setpoint
-                         */
+                        // control state:
+                        // 0: no setpoint
+                        // 1: vel setpoint
+                        // 2: pose setpoint
+                        // 3: both setpoint
+                        
                         control_state = 0;
                         if(v_sp_flag) control_state += 1;
                         if(p_sp_flag) control_state += 2;
@@ -531,6 +531,11 @@ int main(int argc, char **argv)
                                 y_record = pos(1);
                                 z_record = pos(2);
                                 yaw_record = yaw;
+
+                                acc_x = 0.0;
+                                acc_y = 0.0;
+                                acc_z = 0.0;
+                                acc_yaw = 0.0;
 
                                 if_record = false;
 
@@ -570,11 +575,7 @@ int main(int argc, char **argv)
                         else
                         {
                             /* no setpoints received, leave to handle by the watch dog */
-                            if_record = true;
-                            acc_x = 0.0;
-                            acc_y = 0.0;
-                            acc_z = 0.0;
-                            acc_yaw = 0.0;          
+                            if_record = true;          
                         }
                     }
                     else  // head coordinate
