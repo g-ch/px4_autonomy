@@ -360,10 +360,7 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = pos(0);
                     cmd_pose.pose.position.y = pos(1);
                     cmd_pose.pose.position.z = pos(2);
-                    //cmd_pose.pose.orientation.x = 0.0;
-	            //cmd_pose.pose.orientation.y = 0.0;
-	            //cmd_pose.pose.orientation.z = sin(setpoint.yaw/2);
-                    //cmd_pose.pose.orientation.w = cos(setpoint.yaw/2);
+
                     tf::Quaternion cmd_q(yaw, pitch_record, roll_record);
                     tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
@@ -399,8 +396,8 @@ int main(int argc, char **argv)
                     else
                         cmd_pose.pose.position.z = z_record;
 
-                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
-                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                   // tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
                     pose_sp_pub.publish(cmd_pose);
 
