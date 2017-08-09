@@ -127,6 +127,7 @@ int main(int argc, char **argv)
     ros::Publisher vel_sp_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 1);  
     ros::Publisher pose_sp_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 1);
     ros::Publisher status_pub = nh.advertise<std_msgs::UInt8>("/px4/status", 1); 
+    ros::Publisher pose_pub = nh.advertise<px4_autonomy::Position>("/px4/pose", 1); 
 
     ros::Rate loop_rate(LOOP_RATE);
     int time_bone = 0;
@@ -134,6 +135,7 @@ int main(int argc, char **argv)
     geometry_msgs::TwistStamped cmd_vel; //the velocity sent to mavros
     geometry_msgs::PoseStamped cmd_pose;  //the position sent to mavros
     std_msgs::UInt8 status_value;
+    px4_autonomy::Position pose_cal;
 
     /*variable for position control type in px4*/
     float x_record = 0.0;
@@ -169,7 +171,15 @@ int main(int argc, char **argv)
     /* Main loop */
     while(nh.ok())
     {
-        /*Velocity control type*/
+
+        /* Publish px4 pose */
+        pose_cal.x = pos(0);
+        pose_cal.y = pos(1);
+        pose_cal.z = pos(2);
+        pose_cal.yaw = yaw;
+        pose_pub.publish(pose_cal);
+
+        /* Velocity control type */
         if(control_type == 0.f)
         {
             switch(status)
@@ -430,8 +440,8 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    float add_height = (toff_height +0.1f - pos(2)) * 1.f;
-                    if(add_height > 0.5f) add_height = 0.5f;
+                    float add_height = (toff_height +0.1f - pos(2)) * 1.1f;
+                    if(add_height > 0.8f) add_height = 0.8f;
                     else if(add_height < 0.2f) add_height = 0.2f;
 
                     cmd_pose.pose.position.z = pos(2) + add_height;
@@ -471,9 +481,9 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    float dec_height = 0.f - (pos(2) + 0.1f)* 1.0f;
-                    if(dec_height > -0.1f) dec_height = -0.2f;
-                    else if(dec_height < -0.4f) dec_height = -0.4f;
+                    float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
+                    if(dec_height > -0.3f) dec_height = -0.3f;
+                    else if(dec_height < -0.6f) dec_height = -0.6f;
 
                     cmd_pose.pose.position.z = pos(2) + dec_height;
 
@@ -539,6 +549,7 @@ int main(int argc, char **argv)
                         else if(v_sp_flag && p_sp_flag) //velocity with position tracker
                         {
                             ROS_INFO("Can not handle both velocity and position setpoint in position control mode!");
+                            if_record = true; //consider changings between modes
                             //status = 5;
                         }
                         else

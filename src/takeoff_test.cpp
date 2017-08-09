@@ -16,19 +16,20 @@ int status;
 float current_px = 0.0;
 float current_py = 0.0;
 float current_pz = 0.0;
+float current_yaw = 0.0;
 
 void chatterCallback_status(const std_msgs::UInt8 &msg)
 {
 	status =  msg.data;
 }
 
-void chatterCallback_local_pose(const geometry_msgs::PoseStamped &msg)
+void chatterCallback_px4_pose(const px4_autonomy::Position &msg)
 {
-    current_px = msg.pose.position.x;
-    current_py = msg.pose.position.y;
-    current_pz = msg.pose.position.z;
+    current_px = msg.x;
+    current_py = msg.y;
+    current_pz = msg.z;
+    current_yaw = msg.yaw;
 }
-
 
 int main(int argc, char **argv)
 {
@@ -38,7 +39,7 @@ int main(int argc, char **argv)
 
 
     ros::Subscriber status_sub = nh.subscribe("/px4/status", 1, chatterCallback_status);
-    ros::Subscriber local_pose_sub = nh.subscribe("/mavros/local_position/pose", 1,chatterCallback_local_pose);
+    ros::Subscriber px4_pose_sub = nh.subscribe("/px4/pose", 1,chatterCallback_px4_pose);
 
     ros::Publisher pose_pub = nh.advertise<px4_autonomy::Position>("/px4/cmd_pose", 1); 
     ros::Publisher vel_pub = nh.advertise<px4_autonomy::Velocity>("/px4/cmd_vel", 1); 
@@ -57,6 +58,7 @@ int main(int argc, char **argv)
     bool record_bool = false; //just to test stage 3(counter between 600~700)
     float record_x = 0.0;
     float record_y = 0.0;
+    float record_yaw = 0.0;
 
     while(nh.ok())
     {
@@ -78,7 +80,60 @@ int main(int argc, char **argv)
 	    		{	
 	    			counter ++;
 
-	    			if(counter > 200)  //to test position control
+	    			if(counter == 200 || counter == 600) record_bool = true;
+
+	    			if(counter < 200)  //v
+	    			{
+	    				vel.header.stamp = ros::Time::now();
+		    			vel.x = 0.5;
+		    			vel.y = 0.0;
+		    			vel.z = 0;
+		    			vel.yaw_rate = 0.0;
+		    			vel_pub.publish(vel);
+	    			}
+	    			else if(counter < 400)  //position control start from the position after velocity control
+	    			{
+	    				if(record_bool)
+	    				{
+	    					record_x = current_px;
+	    					record_y = current_py;
+	    					record_yaw = current_yaw;
+	    					record_bool = false;
+	    				}
+	    				pose.header.stamp = ros::Time::now();
+		    			pose.x = -(counter - 200)/40.f + record_x;
+		    			pose.y = record_y;
+		    			pose.z = 3.0;
+		    			pose.yaw = record_yaw;
+		    			pose_pub.publish(pose);
+	    			}
+	    			else if(counter < 600)  //v
+	    			{
+	    				vel.header.stamp = ros::Time::now();
+		    			vel.x = 0.0;
+		    			vel.y = 0.5;
+		    			vel.z = 0;
+		    			vel.yaw_rate = 0.0;
+		    			vel_pub.publish(vel);
+	    			}
+	    			else if(counter < 800)  //p
+	    			{
+	    				if(record_bool)
+	    				{
+	    					record_x = current_px;
+	    					record_y = current_py;
+	    					record_yaw = current_yaw;
+	    					record_bool = false;
+	    				}
+	    				pose.header.stamp = ros::Time::now();
+		    			pose.x = record_x;
+		    			pose.y = -(counter - 600)/40.f + record_y;
+		    			pose.z = 3.0;
+		    			pose.yaw = record_yaw;
+		    			pose_pub.publish(pose);
+	    			}
+
+	    			else if(counter > 1000)  //to test position control
 	    			{
 	    				tf_val.take_off = 2; //land
 	    				takeoff_pub.publish(tf_val);
