@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 		    			pose.x = record_x;
 		    			pose.y = -(counter - 600)/20.f + record_y;
 		    			pose.z = 3.0;
-		    			pose.yaw = record_yaw;
+		    			pose.yaw = record_yaw + 1.7;  // !!!!! yaw  controled here
 		    			pose_pub.publish(pose);
 	    			}
 

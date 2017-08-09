@@ -384,6 +384,7 @@ int main(int argc, char **argv)
                     if(offboard_ready)
                     {
                         status = 1;
+                        if_record = true;
                     } 
                     break;
                 }
