@@ -145,6 +145,8 @@ int main(int argc, char **argv)
     float pitch_record = 0.0;
     float roll_record = 0.0;
     bool if_record = true;
+    int control_state = 0;
+    int control_state_last = 0;
 
 
     /* PID storage values */
@@ -506,8 +508,21 @@ int main(int argc, char **argv)
                 {
                     if(coor_type == 0.f) //enu coordinate
                     {
+                        /* control state:
+                        0: no setpoint
+                        1: vel setpoint
+                        2: pose setpoint
+                        3: both setpoint
+                         */
+                        control_state = 0;
+                        if(v_sp_flag) control_state += 1;
+                        if(p_sp_flag) control_state += 2;
+
+                        if(control_state != control_state_last) if_record = true; //for control mode change from position to velocity
+                        control_state_last = control_state;
+
                         
-                        if(v_sp_flag && !p_sp_flag) //only velocity
+                        if(control_state == 1) //only velocity
                         {
                             if(if_record)
                             {
@@ -536,7 +551,7 @@ int main(int argc, char **argv)
                             pose_sp_pub.publish(cmd_pose);
                             
                         }
-                        else if(!v_sp_flag && p_sp_flag) //only position
+                        else if(control_state == 2) //only position
                         {
                             cmd_pose.pose.position.x = pos_sp(0);
                             cmd_pose.pose.position.y = pos_sp(1);
@@ -546,10 +561,9 @@ int main(int argc, char **argv)
                             tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
                             pose_sp_pub.publish(cmd_pose);
                         }
-                        else if(v_sp_flag && p_sp_flag) //velocity with position tracker
+                        else if(control_state == 3) //velocity with position tracker
                         {
                             ROS_INFO("Can not handle both velocity and position setpoint in position control mode!");
-                            if_record = true; //consider changings between modes
                             //status = 5;
                         }
                         else

@@ -85,7 +85,7 @@ int main(int argc, char **argv)
 	    			if(counter < 200)  //v
 	    			{
 	    				vel.header.stamp = ros::Time::now();
-		    			vel.x = 0.5;
+		    			vel.x = 1.0;
 		    			vel.y = 0.0;
 		    			vel.z = 0;
 		    			vel.yaw_rate = 0.0;
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 	    					record_bool = false;
 	    				}
 	    				pose.header.stamp = ros::Time::now();
-		    			pose.x = -(counter - 200)/40.f + record_x;
+		    			pose.x = -(counter - 200)/20.f + record_x;
 		    			pose.y = record_y;
 		    			pose.z = 3.0;
 		    			pose.yaw = record_yaw;
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
 	    			{
 	    				vel.header.stamp = ros::Time::now();
 		    			vel.x = 0.0;
-		    			vel.y = 0.5;
+		    			vel.y = 1.0;
 		    			vel.z = 0;
 		    			vel.yaw_rate = 0.0;
 		    			vel_pub.publish(vel);
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 	    				}
 	    				pose.header.stamp = ros::Time::now();
 		    			pose.x = record_x;
-		    			pose.y = -(counter - 600)/40.f + record_y;
+		    			pose.y = -(counter - 600)/20.f + record_y;
 		    			pose.z = 3.0;
 		    			pose.yaw = record_yaw;
 		    			pose_pub.publish(pose);
