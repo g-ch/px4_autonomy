@@ -15,8 +15,8 @@
 
 using namespace std;
 
-#define LOOP_RATE 20
-#define DOG_RATE 1
+#define LOOP_RATE 50
+#define DOG_RATE 2
 #define PI 3.1416
 /* functions declaration */
 void chatterCallback_local_pose(const geometry_msgs::PoseStamped &msg);
@@ -372,12 +372,12 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = pos(0);
                     cmd_pose.pose.position.y = pos(1);
                     cmd_pose.pose.position.z = pos(2);
-                    //cmd_pose.pose.orientation.x = 0.0;
-	            //cmd_pose.pose.orientation.y = 0.0;
-	            //cmd_pose.pose.orientation.z = sin(setpoint.yaw/2);
-                    //cmd_pose.pose.orientation.w = cos(setpoint.yaw/2);
-                    tf::Quaternion cmd_q(yaw, pitch_record, roll_record);
-                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    cmd_pose.pose.orientation.x = 0.0;
+	                cmd_pose.pose.orientation.y = 0.0;
+	                cmd_pose.pose.orientation.z = sin(yaw/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw/2.f);
+                    //tf::Quaternion cmd_q(yaw, pitch_record, roll_record);
+                    //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
                     pose_sp_pub.publish(cmd_pose);
 
@@ -412,8 +412,12 @@ int main(int argc, char **argv)
                     else
                         cmd_pose.pose.position.z = z_record;
 
-                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
-                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    cmd_pose.pose.orientation.x = 0.0;
+                    cmd_pose.pose.orientation.y = 0.0;
+                    cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
+                    //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
                     pose_sp_pub.publish(cmd_pose);
 
@@ -449,8 +453,12 @@ int main(int argc, char **argv)
 
                     cmd_pose.pose.position.z = pos(2) + add_height;
 
-                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
-                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    cmd_pose.pose.orientation.x = 0.0;
+                    cmd_pose.pose.orientation.y = 0.0;
+                    cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
            
 
                     if(pos(2) > toff_height - 0.1f )
@@ -490,8 +498,12 @@ int main(int argc, char **argv)
 
                     cmd_pose.pose.position.z = pos(2) + dec_height;
 
-                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
-                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    cmd_pose.pose.orientation.x = 0.0;
+                    cmd_pose.pose.orientation.y = 0.0;
+                    cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
 
                     pose_sp_pub.publish(cmd_pose);
 
@@ -552,8 +564,13 @@ int main(int argc, char **argv)
                             cmd_pose.pose.position.z = z_record + acc_z;
                             float temp_yaw = yaw_record + acc_yaw;
 
-                            tf::Quaternion cmd_q(temp_yaw, pitch_record, roll_record);
-                            tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                            //tf::Quaternion cmd_q(temp_yaw, pitch_record, roll_record);
+                            //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                            cmd_pose.pose.orientation.x = 0.0;
+                            cmd_pose.pose.orientation.y = 0.0;
+                            cmd_pose.pose.orientation.z = sin(temp_yaw/2.f);
+                            cmd_pose.pose.orientation.w = cos(temp_yaw/2.f);
+
                             pose_sp_pub.publish(cmd_pose);
                             
                         }
@@ -563,8 +580,13 @@ int main(int argc, char **argv)
                             cmd_pose.pose.position.y = pos_sp(1);
                             cmd_pose.pose.position.z = pos_sp(2);
 
-                            tf::Quaternion cmd_q(yaw_sp, pitch_record, roll_record);
-                            tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                            //tf::Quaternion cmd_q(yaw_sp, pitch_record, roll_record);
+                            //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                            cmd_pose.pose.orientation.x = 0.0;
+                            cmd_pose.pose.orientation.y = 0.0;
+                            cmd_pose.pose.orientation.z = sin(yaw_sp/2.f);
+                            cmd_pose.pose.orientation.w = cos(yaw_sp/2.f);
+
                             pose_sp_pub.publish(cmd_pose);
                         }
                         else if(control_state == 3) //velocity with position tracker
@@ -584,27 +606,7 @@ int main(int argc, char **argv)
                         ROS_INFO("Wrong coordinate type");
                         status = 5;
                     }
-
-                    /*set_straint_abs(cmd_vel.twist.linear.x, max_vx);
-                    set_straint_abs(cmd_vel.twist.linear.y, max_vy);
-                    set_straint_abs(cmd_vel.twist.linear.z, max_vz);
-                    set_straint_abs(cmd_vel.twist.angular.z, max_yawrate);*/
-
-                    /* set constraints */
-                    if(cmd_vel.twist.linear.x > max_vx) cmd_vel.twist.linear.x = max_vx;
-                    else if(cmd_vel.twist.linear.x < -max_vx) cmd_vel.twist.linear.x = -max_vx;
-
-                    if(cmd_vel.twist.linear.y > max_vy) cmd_vel.twist.linear.y = max_vy;
-                    else if(cmd_vel.twist.linear.y < -max_vy) cmd_vel.twist.linear.y = -max_vy;
-
-                    if(cmd_vel.twist.linear.z > max_vz) cmd_vel.twist.linear.z = max_vz;
-                    else if(cmd_vel.twist.linear.z < -max_vz) cmd_vel.twist.linear.z = -max_vz;
-
-                    if(cmd_vel.twist.angular.z > max_yawrate) cmd_vel.twist.angular.z = max_yawrate;
-                    else if(cmd_vel.twist.angular.z < -max_yawrate) cmd_vel.twist.angular.z = -max_yawrate;
-
-                    vel_sp_pub.publish(cmd_vel);
-
+                    
                     if(!v_sp_flag && !p_sp_flag) status = 5;
                     if(land_flag) status = 3;
 
@@ -629,8 +631,13 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.y = y_record;
                     cmd_pose.pose.position.z = z_record;
 
-                    tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
-                    tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+                    //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
+                    //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
+
+                    cmd_pose.pose.orientation.x = 0.0;
+                    cmd_pose.pose.orientation.y = 0.0;
+                    cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
 
                     pose_sp_pub.publish(cmd_pose);
 
