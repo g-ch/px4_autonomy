@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define LOOP_RATE 50
+#define LOOP_RATE 20
 #define DOG_RATE 2
 #define PI 3.1416
 /* functions declaration */

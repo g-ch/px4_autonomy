@@ -104,7 +104,7 @@ int main(int argc, char **argv)
 		    			pose.x = -(counter - 200)/20.f + record_x;
 		    			pose.y = record_y;
 		    			pose.z = 3.0;
-		    			pose.yaw = record_yaw;
+		    			pose.yaw = 0.0; //record_yaw;
 		    			pose_pub.publish(pose);
 	    			}
 	    			else if(counter < 600)  //v
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
 		    			pose.x = record_x;
 		    			pose.y = -(counter - 600)/20.f + record_y;
 		    			pose.z = 3.0;
-		    			pose.yaw = record_yaw + 1.7;  // !!!!! yaw  controled here
+		    			pose.yaw = record_yaw + 1.57;  // !!!!! yaw  controled here
 		    			pose_pub.publish(pose);
 	    			}
 
