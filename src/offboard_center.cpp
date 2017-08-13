@@ -400,12 +400,11 @@ int main(int argc, char **argv)
                         yaw_record = yaw;
 
                         cout<<"z_rec"<<z_record<<endl;
-
                         if_record = false;
                     }
 
-                    cmd_pose.pose.position.x = x_record;
-                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.x = pos(0);
+                    cmd_pose.pose.position.y = pos(1);
 
                     if(pos(2) < 0.1)
                         cmd_pose.pose.position.z = -0.5;
@@ -414,8 +413,8 @@ int main(int argc, char **argv)
 
                     cmd_pose.pose.orientation.x = 0.0;
                     cmd_pose.pose.orientation.y = 0.0;
-                    cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
-                    cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
+                    cmd_pose.pose.orientation.z = sin(yaw/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw/2.f);
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
