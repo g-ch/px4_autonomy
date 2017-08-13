@@ -408,7 +408,7 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.y = y_record;
 
                     if(pos(2) < 0.1)
-                        cmd_pose.pose.position.z = -0.1;
+                        cmd_pose.pose.position.z = -0.5;
                     else
                         cmd_pose.pose.position.z = z_record;
 
@@ -493,8 +493,8 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.y = y_record;
 
                     float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
-                    if(dec_height > -0.3f) dec_height = -0.3f;
-                    else if(dec_height < -0.6f) dec_height = -0.6f;
+                    if(dec_height > -0.2f) dec_height = -0.2f;
+                    else if(dec_height < -0.5f) dec_height = -0.5f;
 
                     cmd_pose.pose.position.z = pos(2) + dec_height;
 
