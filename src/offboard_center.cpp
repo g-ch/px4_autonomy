@@ -406,8 +406,8 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = pos(0);
                     cmd_pose.pose.position.y = pos(1);
 
-                    if(pos(2) < 0.1)
-                        cmd_pose.pose.position.z = -0.5;
+                    if(pos(2) < land_height + 0.02)
+                        cmd_pose.pose.position.z = -0.1;
                     else
                         cmd_pose.pose.position.z = z_record;
 
@@ -500,8 +500,8 @@ int main(int argc, char **argv)
                     }
 
                     float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
-                    if(dec_height > -0.2f) dec_height = -0.2f;
-                    else if(dec_height < -0.5f) dec_height = -0.5f;
+                    if(dec_height > -0.1f) dec_height = -0.1f;
+                    else if(dec_height < -0.4f) dec_height = -0.4f;
 
                     cmd_pose.pose.position.z = pos(2) + dec_height;
 
