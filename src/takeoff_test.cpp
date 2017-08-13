@@ -49,7 +49,7 @@ int main(int argc, char **argv)
     px4_autonomy::Velocity vel;
     px4_autonomy::Takeoff tf_val;
 
-    ros::Rate loop_rate(20);
+    ros::Rate loop_rate(40);
 
     int counter = 0;
 
@@ -101,10 +101,10 @@ int main(int argc, char **argv)
 	    					record_bool = false;
 	    				}
 	    				pose.header.stamp = ros::Time::now();
-		    			pose.x = -(counter - 200)/100.f + record_x;
+		    			pose.x = -(counter - 200)/200.f + record_x;
 		    			pose.y = record_y;
 		    			pose.z = 1.0;
-		    			pose.yaw = 0.0; //record_yaw;
+		    			pose.yaw = record_yaw;
 		    			pose_pub.publish(pose);
 	    			}
 	    			else if(counter < 600)  //v
@@ -127,7 +127,7 @@ int main(int argc, char **argv)
 	    				}
 	    				pose.header.stamp = ros::Time::now();
 		    			pose.x = record_x;
-		    			pose.y = -(counter - 600)/100.f + record_y;
+		    			pose.y = -(counter - 600)/200.f + record_y;
 		    			pose.z = 1.0;
 		    			pose.yaw = record_yaw;
 		    			pose_pub.publish(pose);
