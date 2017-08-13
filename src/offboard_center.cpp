@@ -488,8 +488,16 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    cmd_pose.pose.position.x = x_record;
-                    cmd_pose.pose.position.y = y_record;
+                    if(pos(2) < land_height + 0.2)
+                    {
+                        cmd_pose.pose.position.x = pos(0);
+                        cmd_pose.pose.position.y = pos(1);
+                    }
+                    else
+                    {
+                        cmd_pose.pose.position.x = x_record;
+                        cmd_pose.pose.position.y = y_record;
+                    }
 
                     float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
                     if(dec_height > -0.2f) dec_height = -0.2f;
