@@ -93,7 +93,7 @@ int main(int argc, char **argv)
 	    			}
 	    			else if(counter < 400)  //position control start from the position after velocity control
 	    			{
-	    				if(record_bool)
+	    				/*if(record_bool)
 	    				{
 	    					record_x = current_px;
 	    					record_y = current_py;
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
 		    			pose.y = record_y;
 		    			pose.z = 1.0;
 		    			pose.yaw = record_yaw;
-		    			pose_pub.publish(pose);
+		    			pose_pub.publish(pose);*/
 	    			}
 	    			else if(counter < 600)  //v
 	    			{
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
 	    			}
 	    			else if(counter < 800)  //p
 	    			{
-	    				if(record_bool)
+	    				/*if(record_bool)
 	    				{
 	    					record_x = current_px;
 	    					record_y = current_py;
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 		    			pose.y = -(counter - 600)/200.f + record_y;
 		    			pose.z = 1.0;
 		    			pose.yaw = record_yaw;
-		    			pose_pub.publish(pose);
+		    			pose_pub.publish(pose);*/
 	    			}
 
 	    			else if(counter > 1000)  //to test position control
