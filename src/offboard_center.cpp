@@ -147,7 +147,8 @@ int main(int argc, char **argv)
     bool if_record = true;
     int control_state = 0;
     int control_state_last = 0;
-
+    int land_counter = 0;
+    float last_height = 0.0;
 
     /* PID storage values */
     float x_error = 0.0;
@@ -168,6 +169,8 @@ int main(int argc, char **argv)
     float acc_y = 0.0;
     float acc_z = 0.0;
     float acc_yaw = 0.0;
+
+
 
 
     /* Main loop */
@@ -406,18 +409,16 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = pos(0);
                     cmd_pose.pose.position.y = pos(1);
 
-                    if(pos(2) < 0.0)
+                    if(pos(2) < land_height + 0.1)
                         cmd_pose.pose.position.z = -2.0;
 
-                    else if(pos(2) < land_height - 0.06)
-                        cmd_pose.pose.position.z = -1.0;
+                    // else if(pos(2) < land_height - 0.05)
+                    //     cmd_pose.pose.position.z = -1.0;
 
-                    else if(pos(2) < land_height + 0.05)
-                    {
-                        cmd_pose.pose.position.x = x_record;
-                        cmd_pose.pose.position.y = y_record;
-                        cmd_pose.pose.position.z = -0.1;
-                    }
+                    // else if(pos(2) < land_height + 0.05)
+                    // {
+                    //     cmd_pose.pose.position.z = -0.2;
+                    // }
                         
                     else
                         cmd_pose.pose.position.z = z_record;
@@ -457,9 +458,9 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    float add_height = (toff_height +0.1f - pos(2)) * 1.1f;
-                    if(add_height > 0.8f) add_height = 0.8f;
-                    else if(add_height < 0.2f) add_height = 0.2f;
+                    float add_height = (toff_height - pos(2)) * 1.1f;
+                    if(add_height > 0.6f) add_height = 0.6f;
+                    else if(add_height < 0.1f) add_height = 0.1f;
 
                     cmd_pose.pose.position.z = pos(2) + add_height;
 
@@ -499,16 +500,16 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    // if(pos(2) < land_height + 0.2)
-                    // {
-                    //     cmd_pose.pose.position.x = pos(0);
-                    //     cmd_pose.pose.position.y = pos(1);
-                    // }
-                    // else
-                    // {
+                    if(pos(2) < land_height + 0.05)
+                    {
+                         cmd_pose.pose.position.x = pos(0);
+                         cmd_pose.pose.position.y = pos(1);
+                    }
+                    else
+                    {
                         cmd_pose.pose.position.x = x_record;
                         cmd_pose.pose.position.y = y_record;
-                    //}
+                    }
 
                     float dec_height = 0.f - (pos(2) + 0.1f)* 1.f;
                     if(dec_height > -0.1f) dec_height = -0.1f;
@@ -525,10 +526,26 @@ int main(int argc, char **argv)
 
                     pose_sp_pub.publish(cmd_pose);
 
-                    if(pos(2) < land_height)
+
+                    /*if(!(last_height > pos(2)))
+                    {
+                        land_counter ++;
+                    } 
+                    last_height = pos(2);
+                        
+
+                    if(land_counter > 5) //pos(2) < land_height  land_counter > 5) //)
                     {
                         status = 1;
                         if_record = true;
+                        land_counter = 0;
+                    } */
+
+                    if(pos(2) < land_height) 
+                    {
+                        status = 1;
+                        if_record = true;
+                        land_counter = 0;
                     } 
 
                     break;

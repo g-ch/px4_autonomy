@@ -12,7 +12,7 @@ control_type: 1 #position control is more stable!
 #Take off height
 toff_height: 1.0 # should be positive
 #The height to judge if landed,  a litte larger than the real land height is recomended
-land_height: 0.12 # should be positive, a litte larger than the real land height is recomended
+land_height: 0.1 # should be positive, a litte larger than the real land height is recomended
 
 #maximum velocity
 max_vx: 2.0
