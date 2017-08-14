@@ -30,6 +30,16 @@ void chatterCallback_px4_pose(const px4_autonomy::Position &msg)
     current_pz = msg.z;
     current_yaw = msg.yaw;
 }
+ 
+int wait(int &counter, const int &limitation)
+{
+	if(counter > limitation) return 1;
+	else
+	{
+		counter ++;
+		return 0;
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -59,6 +69,8 @@ int main(int argc, char **argv)
     float record_x = 0.0;
     float record_y = 0.0;
     float record_yaw = 0.0;
+
+    int wait_counter = 0;
 
     while(nh.ok())
     {
@@ -116,6 +128,10 @@ int main(int argc, char **argv)
 		    			vel.yaw_rate = 0.0;
 		    			vel_pub.publish(vel);
 	    			}
+	    			else if(counter < 700)
+	    			{
+
+	    			}
 	    			else if(counter < 800)  //p
 	    			{
 	    				/*if(record_bool)
@@ -143,6 +159,25 @@ int main(int argc, char **argv)
 	    			
 	    			break;
 	    		}
+	    	}
+        }
+
+        else 
+        {
+        	switch(status)
+	    	{
+	    		case 1:
+	    		{
+	    			if(wait(wait_counter, 120))
+	    			{
+	    				tf_val.take_off = 1; //take off when status is 1(waiting take off orders.)
+	    				takeoff_pub.publish(tf_val);
+	    				ROS_INFO("Taking off");	
+	    			}
+	    			break;
+	    		}
+	    		default:
+	    		break;
 	    	}
         }
 
