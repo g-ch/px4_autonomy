@@ -149,6 +149,7 @@ int main(int argc, char **argv)
     int control_state_last = 0;
     int land_counter = 0;
     float last_height = 0.0;
+    float takeoff_z_set = 0.f;
 
     /* PID storage values */
     float x_error = 0.0;
@@ -443,6 +444,7 @@ int main(int argc, char **argv)
                         yaw_record = yaw;
 
                         cout<<"z_rec"<<z_record<<endl;
+                        takeoff_z_set = z_record;
 
                         if_record = false;
                     }
@@ -450,12 +452,14 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
+                    /*float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
                     if(add_height > 0.8f) add_height = 0.8f;
                     else if(add_height < 0.4f) add_height = 0.4f;
+                    cmd_pose.pose.position.z = pos(2) + add_height;*/
 
+                    takeoff_z_set += 0.02;
+                    cmd_pose.pose.position.z = takeoff_z_set;
 
-                    cmd_pose.pose.position.z = pos(2) + add_height;
                     if(cmd_pose.pose.position.z > toff_height) cmd_pose.pose.position.z = toff_height;
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
@@ -470,6 +474,7 @@ int main(int argc, char **argv)
                     {
                         cmd_pose.pose.position.z = pos(2);
                         status = 5;
+                        takeoff_z_set = 0.f;
                         if_record = true;
                     } 
 
