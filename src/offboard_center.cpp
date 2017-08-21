@@ -15,7 +15,7 @@
 
 using namespace std;
 
-#define LOOP_RATE 20
+#define LOOP_RATE 40
 #define DOG_RATE 2
 #define PI 3.1416
 /* functions declaration */
@@ -147,7 +147,8 @@ int main(int argc, char **argv)
     bool if_record = true;
     int control_state = 0;
     int control_state_last = 0;
-
+    int land_counter = 0;
+    float last_height = 0.0;
 
     /* PID storage values */
     float x_error = 0.0;
@@ -168,6 +169,8 @@ int main(int argc, char **argv)
     float acc_y = 0.0;
     float acc_z = 0.0;
     float acc_yaw = 0.0;
+
+
 
 
     /* Main loop */
@@ -400,22 +403,22 @@ int main(int argc, char **argv)
                         yaw_record = yaw;
 
                         cout<<"z_rec"<<z_record<<endl;
-
                         if_record = false;
                     }
 
-                    cmd_pose.pose.position.x = x_record;
-                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.x = pos(0);
+                    cmd_pose.pose.position.y = pos(1);
 
                     if(pos(2) < land_height + 0.05)
                         cmd_pose.pose.position.z = pos(2) - 0.2;
+
                     else
                         cmd_pose.pose.position.z = z_record;
 
                     cmd_pose.pose.orientation.x = 0.0;
                     cmd_pose.pose.orientation.y = 0.0;
-                    cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
-                    cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
+                    cmd_pose.pose.orientation.z = sin(yaw/2.f);
+                    cmd_pose.pose.orientation.w = cos(yaw/2.f);
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
 
@@ -450,6 +453,7 @@ int main(int argc, char **argv)
                     float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
                     if(add_height > 0.8f) add_height = 0.8f;
                     else if(add_height < 0.4f) add_height = 0.4f;
+
 
                     cmd_pose.pose.position.z = pos(2) + add_height;
                     if(cmd_pose.pose.position.z > toff_height) cmd_pose.pose.position.z = toff_height;
@@ -490,8 +494,16 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    cmd_pose.pose.position.x = x_record;
-                    cmd_pose.pose.position.y = y_record;
+                    if(pos(2) < land_height + 0.05)
+                    {
+                         cmd_pose.pose.position.x = pos(0);
+                         cmd_pose.pose.position.y = pos(1);
+                    }
+                    else
+                    {
+                        cmd_pose.pose.position.x = x_record;
+                        cmd_pose.pose.position.y = y_record;
+                    }
 
                     float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
                     if(dec_height > -0.2f) dec_height = -0.2f;
@@ -508,10 +520,26 @@ int main(int argc, char **argv)
 
                     pose_sp_pub.publish(cmd_pose);
 
-                    if(pos(2) < land_height)
+
+                    /*if(!(last_height > pos(2)))
+                    {
+                        land_counter ++;
+                    } 
+                    last_height = pos(2);
+                        
+
+                    if(land_counter > 5) //pos(2) < land_height  land_counter > 5) //)
                     {
                         status = 1;
                         if_record = true;
+                        land_counter = 0;
+                    } */
+
+                    if(pos(2) < land_height) 
+                    {
+                        status = 1;
+                        if_record = true;
+                        land_counter = 0;
                     } 
 
                     break;

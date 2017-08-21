@@ -30,6 +30,16 @@ void chatterCallback_px4_pose(const px4_autonomy::Position &msg)
     current_pz = msg.z;
     current_yaw = msg.yaw;
 }
+ 
+int wait(int &counter, const int &limitation)
+{
+	if(counter > limitation) return 1;
+	else
+	{
+		counter ++;
+		return 0;
+	}
+}
 
 int main(int argc, char **argv)
 {
@@ -49,7 +59,7 @@ int main(int argc, char **argv)
     px4_autonomy::Velocity vel;
     px4_autonomy::Takeoff tf_val;
 
-    ros::Rate loop_rate(20);
+    ros::Rate loop_rate(40);
 
     int counter = 0;
 
@@ -59,6 +69,8 @@ int main(int argc, char **argv)
     float record_x = 0.0;
     float record_y = 0.0;
     float record_yaw = 0.0;
+
+    int wait_counter = 0;
 
     while(nh.ok())
     {
@@ -85,7 +97,7 @@ int main(int argc, char **argv)
 	    			if(counter < 200)  //v
 	    			{
 	    				vel.header.stamp = ros::Time::now();
-		    			vel.x = 1.0;
+		    			vel.x = 0.2;
 		    			vel.y = 0.0;
 		    			vel.z = 0;
 		    			vel.yaw_rate = 0.0;
@@ -93,7 +105,7 @@ int main(int argc, char **argv)
 	    			}
 	    			else if(counter < 400)  //position control start from the position after velocity control
 	    			{
-	    				if(record_bool)
+	    				/*if(record_bool)
 	    				{
 	    					record_x = current_px;
 	    					record_y = current_py;
@@ -101,24 +113,28 @@ int main(int argc, char **argv)
 	    					record_bool = false;
 	    				}
 	    				pose.header.stamp = ros::Time::now();
-		    			pose.x = -(counter - 200)/20.f + record_x;
+		    			pose.x = -(counter - 200)/200.f + record_x;
 		    			pose.y = record_y;
-		    			pose.z = 3.0;
-		    			pose.yaw = 0.0; //record_yaw;
-		    			pose_pub.publish(pose);
+		    			pose.z = 1.0;
+		    			pose.yaw = record_yaw;
+		    			pose_pub.publish(pose);*/
 	    			}
 	    			else if(counter < 600)  //v
 	    			{
 	    				vel.header.stamp = ros::Time::now();
 		    			vel.x = 0.0;
-		    			vel.y = 1.0;
+		    			vel.y = 0.2;
 		    			vel.z = 0;
 		    			vel.yaw_rate = 0.0;
 		    			vel_pub.publish(vel);
 	    			}
+	    			else if(counter < 700)
+	    			{
+
+	    			}
 	    			else if(counter < 800)  //p
 	    			{
-	    				if(record_bool)
+	    				/*if(record_bool)
 	    				{
 	    					record_x = current_px;
 	    					record_y = current_py;
@@ -127,10 +143,10 @@ int main(int argc, char **argv)
 	    				}
 	    				pose.header.stamp = ros::Time::now();
 		    			pose.x = record_x;
-		    			pose.y = -(counter - 600)/20.f + record_y;
-		    			pose.z = 3.0;
-		    			pose.yaw = record_yaw + 1.57;  // !!!!! yaw  controled here
-		    			pose_pub.publish(pose);
+		    			pose.y = -(counter - 600)/200.f + record_y;
+		    			pose.z = 1.0;
+		    			pose.yaw = record_yaw;
+		    			pose_pub.publish(pose);*/
 	    			}
 
 	    			else if(counter > 1000)  //to test position control
@@ -143,6 +159,25 @@ int main(int argc, char **argv)
 	    			
 	    			break;
 	    		}
+	    	}
+        }
+
+        else 
+        {
+        	switch(status)
+	    	{
+	    		case 1:
+	    		{
+	    			if(wait(wait_counter, 120))
+	    			{
+	    				tf_val.take_off = 1; //take off when status is 1(waiting take off orders.)
+	    				takeoff_pub.publish(tf_val);
+	    				ROS_INFO("Taking off");	
+	    			}
+	    			break;
+	    		}
+	    		default:
+	    		break;
 	    	}
         }
 
