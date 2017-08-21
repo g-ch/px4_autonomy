@@ -407,8 +407,8 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    if(pos(2) < 0.1)
-                        cmd_pose.pose.position.z = -0.1;
+                    if(pos(2) < land_height + 0.05)
+                        cmd_pose.pose.position.z = pos(2) - 0.2;
                     else
                         cmd_pose.pose.position.z = z_record;
 
@@ -447,11 +447,12 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    float add_height = (toff_height +0.1f - pos(2)) * 1.1f;
+                    float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
                     if(add_height > 0.8f) add_height = 0.8f;
-                    else if(add_height < 0.2f) add_height = 0.2f;
+                    else if(add_height < 0.4f) add_height = 0.4f;
 
                     cmd_pose.pose.position.z = pos(2) + add_height;
+                    if(cmd_pose.pose.position.z > toff_height) cmd_pose.pose.position.z = toff_height;
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
@@ -493,7 +494,7 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.y = y_record;
 
                     float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
-                    if(dec_height > -0.3f) dec_height = -0.3f;
+                    if(dec_height > -0.2f) dec_height = -0.2f;
                     else if(dec_height < -0.6f) dec_height = -0.6f;
 
                     cmd_pose.pose.position.z = pos(2) + dec_height;
