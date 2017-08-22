@@ -410,8 +410,8 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = pos(0);
                     cmd_pose.pose.position.y = pos(1);
 
-                    if(pos(2) < land_height + 0.05)
-                        cmd_pose.pose.position.z = pos(2) - 0.2;
+                    if(pos(2) < land_height + 0.2)
+                        cmd_pose.pose.position.z = pos(2) - 0.5;
 
                     else
                         cmd_pose.pose.position.z = z_record;
@@ -449,15 +449,15 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    cmd_pose.pose.position.x = x_record;
-                    cmd_pose.pose.position.y = y_record;
+                    cmd_pose.pose.position.x = pos(0);
+                    cmd_pose.pose.position.y = pos(1);
 
                     /*float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
                     if(add_height > 0.8f) add_height = 0.8f;
                     else if(add_height < 0.4f) add_height = 0.4f;
                     cmd_pose.pose.position.z = pos(2) + add_height;*/
 
-                    takeoff_z_set += 0.02;
+                    takeoff_z_set += 0.03;
                     cmd_pose.pose.position.z = takeoff_z_set;
 
                     if(cmd_pose.pose.position.z > toff_height) cmd_pose.pose.position.z = toff_height;
@@ -470,7 +470,7 @@ int main(int argc, char **argv)
                     cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
            
 
-                    if(pos(2) > toff_height - 0.1f )
+                    if(pos(2) > toff_height - 0.2f )
                     {
                         cmd_pose.pose.position.z = pos(2);
                         status = 5;
