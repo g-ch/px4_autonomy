@@ -134,6 +134,7 @@ int main(int argc, char **argv)
 
     geometry_msgs::TwistStamped cmd_vel; //the velocity sent to mavros
     geometry_msgs::PoseStamped cmd_pose;  //the position sent to mavros
+    geometry_msgs::PoseStamped cmd_pose_last;  
     std_msgs::UInt8 status_value;
     px4_autonomy::Position pose_cal;
 
@@ -449,8 +450,18 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    cmd_pose.pose.position.x = pos(0);
-                    cmd_pose.pose.position.y = pos(1);
+                    if(pos(2) < 0.2)
+                    {
+                        cmd_pose.pose.position.x = pos(0);
+                        cmd_pose.pose.position.y = pos(1);
+                        if_record = true;
+                    }
+                    else
+                    {
+                        cmd_pose.pose.position.x = x_record;
+                        cmd_pose.pose.position.y = y_record;
+                    }
+                    
 
                     /*float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
                     if(add_height > 0.8f) add_height = 0.8f;
@@ -575,7 +586,10 @@ int main(int argc, char **argv)
                             {
                                 x_record = pos(0);
                                 y_record = pos(1);
-                                z_record = pos(2);
+                                // z_record = pos(2);
+                                //x_record = cmd_pose_last.pose.position.x;
+                                //y_record = cmd_pose_last.pose.position.y;
+                                z_record = cmd_pose_last.pose.position.z;
                                 yaw_record = yaw;
 
                                 acc_x = 0.0;
@@ -652,9 +666,12 @@ int main(int argc, char **argv)
                 {
                     if(if_record)
                     {
-                        x_record = pos(0);
-                        y_record = pos(1);
-                        z_record = pos(2);
+                        // x_record = pos(0);
+                        // y_record = pos(1);
+                        // z_record = pos(2);
+                        x_record = cmd_pose_last.pose.position.x;
+                        y_record = cmd_pose_last.pose.position.y;
+                        z_record = cmd_pose_last.pose.position.z;
                         yaw_record = yaw;
 
                         if_record = false;
@@ -694,7 +711,9 @@ int main(int argc, char **argv)
                     ROS_INFO("What the hell is this status? It should not happen.");
                     break;
                 }
-            }   
+            } 
+
+            cmd_pose_last = cmd_pose; 
         }
         else
         {
