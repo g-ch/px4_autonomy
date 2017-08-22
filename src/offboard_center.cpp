@@ -146,6 +146,7 @@ int main(int argc, char **argv)
     float pitch_record = 0.0;
     float roll_record = 0.0;
     bool if_record = true;
+    bool tkoff_record = true;
     int control_state = 0;
     int control_state_last = 0;
     int land_counter = 0;
@@ -437,10 +438,19 @@ int main(int argc, char **argv)
 
                 case 2: //take off process
                 {
-                    if(if_record)
+                    
+                    if(tkoff_record)
                     {
                         x_record = pos(0);
                         y_record = pos(1);
+                        tkoff_record = false;
+                    }
+
+
+                    if(if_record)
+                    {
+                        // x_record = pos(0);
+                        // y_record = pos(1);
                         z_record = pos(2);
                         yaw_record = yaw;
 
@@ -454,7 +464,7 @@ int main(int argc, char **argv)
                     {
                         cmd_pose.pose.position.x = pos(0);
                         cmd_pose.pose.position.y = pos(1);
-                        if_record = true;
+                        tkoff_record = true;
                     }
                     else
                     {
@@ -483,7 +493,6 @@ int main(int argc, char **argv)
 
                     if(pos(2) > toff_height - 0.2f )
                     {
-                        cmd_pose.pose.position.z = pos(2);
                         status = 5;
                         takeoff_z_set = 0.f;
                         if_record = true;
