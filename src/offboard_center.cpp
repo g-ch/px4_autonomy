@@ -185,6 +185,8 @@ int main(int argc, char **argv)
         pose_cal.y = pos(1);
         pose_cal.z = pos(2);
         pose_cal.yaw = yaw;
+        if(pose_cal.yaw > 1.57) pose_cal.yaw = yaw - 6.283;
+        else if(pose_cal.yaw < -1.57) pose_cal.yaw = yaw + 6.283;
         pose_pub.publish(pose_cal);
 
         /* Velocity control type */
@@ -311,7 +313,7 @@ int main(int argc, char **argv)
                     else  // head coordinate
                     {
                         /*for now, just hover*/
-                        ROS_INFO("Wrong coordinate type");
+                        //ROS_INFO("Wrong coordinate type");
                         status = 5;
                     }
 
@@ -361,7 +363,7 @@ int main(int argc, char **argv)
 
                 default:
                 {
-                    ROS_INFO("What the hell is this status? It should not happen.");
+                    //ROS_INFO("What the hell is this status? It should not happen.");
                     break;
                 }
             }
@@ -648,7 +650,7 @@ int main(int argc, char **argv)
                         }
                         else if(control_state == 3) //velocity with position tracker
                         {
-                            ROS_INFO("Can not handle both velocity and position setpoint in position control mode!");
+                            //ROS_INFO("Can not handle both velocity and position setpoint in position control mode!");
                             //status = 5;
                         }
                         else
@@ -660,7 +662,7 @@ int main(int argc, char **argv)
                     else  // head coordinate
                     {
                         /*for now, just hover*/
-                        ROS_INFO("Wrong coordinate type");
+                        //ROS_INFO("Wrong coordinate type");
                         status = 5;
                     }
                     
@@ -717,7 +719,7 @@ int main(int argc, char **argv)
                 }
                 default:
                 {
-                    ROS_INFO("What the hell is this status? It should not happen.");
+                    //ROS_INFO("What the hell is this status? It should not happen.");
                     break;
                 }
             } 
@@ -726,7 +728,7 @@ int main(int argc, char **argv)
         }
         else
         {
-            ROS_INFO("Unknown control type!");
+            //ROS_INFO("Unknown control type!");
         }
 
         
@@ -808,7 +810,7 @@ int watch_dog(int &time_bone)
         }
         else if(status == 4)
         {
-            ROS_INFO("Waiting for setpoints...");
+            //ROS_INFO("Waiting for setpoints...");
         }
 
 

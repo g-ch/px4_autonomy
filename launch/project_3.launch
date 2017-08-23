@@ -1,0 +1,10 @@
+<launch>
+	<node pkg="px4_autonomy" name="offboard_center" type="offboard_center" output="screen">
+		<rosparam 
+	        file="$(find px4_autonomy)/cfg/settings.yaml"
+	        command="load" 
+		/>
+	</node>
+	<node pkg="project_3" name="image_detect" type="image_detect" output="screen"/>
+	<node pkg="project_3" name="control" type="control" output="screen"/>
+</launch>
