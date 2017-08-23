@@ -10,7 +10,7 @@ coor_type: 0 #!!!!only enu is supported for now
 control_type: 1 #position control is more stable!
 
 #Take off height
-toff_height: 0.6 # should be positive
+toff_height: 1.0 # should be positive
 #The height to judge if landed,  a litte larger than the real land height is recomended
 
 land_height: 0.16 # should be positive, a litte larger than the real land height is recomended

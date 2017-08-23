@@ -47,6 +47,8 @@ bool land_flag = false;
 bool v_sp_flag = false;
 bool p_sp_flag = false;
 
+bool first_takeoff = true; //to solve height problem caused by barometer during first take off process
+
 /* status: very important variable.
 0: waiting for offboard mode 1: wait on ground 
 2:take off processing 3:landing processing 
@@ -480,7 +482,9 @@ int main(int argc, char **argv)
                     else if(add_height < 0.4f) add_height = 0.4f;
                     cmd_pose.pose.position.z = pos(2) + add_height;*/
 
-                    takeoff_z_set += 0.03;
+                    if(first_takeoff) takeoff_z_set += 0.06;
+                    else takeoff_z_set += 0.03;
+
                     cmd_pose.pose.position.z = takeoff_z_set;
 
                     if(cmd_pose.pose.position.z > toff_height) cmd_pose.pose.position.z = toff_height;
@@ -498,6 +502,7 @@ int main(int argc, char **argv)
                         status = 5;
                         takeoff_z_set = 0.f;
                         if_record = true;
+                        first_takeoff = false;
                     } 
 
                     pose_sp_pub.publish(cmd_pose);
