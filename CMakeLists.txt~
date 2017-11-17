@@ -54,11 +54,3 @@ add_executable(takeoff_test
 target_link_libraries(takeoff_test
   ${catkin_LIBRARIES}
 )
-
-add_executable(ps2
-  src/ps2.cpp
-)
-
-target_link_libraries(ps2
-  ${catkin_LIBRARIES}
-)

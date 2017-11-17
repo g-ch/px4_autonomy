@@ -129,7 +129,8 @@ int main(int argc, char **argv)
     ros::Publisher vel_sp_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 1);  
     ros::Publisher pose_sp_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 1);
     ros::Publisher status_pub = nh.advertise<std_msgs::UInt8>("/px4/status", 1); 
-    ros::Publisher pose_pub = nh.advertise<px4_autonomy::Position>("/px4/pose", 1); 
+    ros::Publisher pose_pub = nh.advertise<px4_autonomy::Position>("/px4/pose", 1);
+    ros::Publisher vel_pub = nh.advertise<px4_autonomy::Velocity>("/px4/velocity", 1);
 
     ros::Rate loop_rate(LOOP_RATE);
     int time_bone = 0;
@@ -139,6 +140,7 @@ int main(int argc, char **argv)
     geometry_msgs::PoseStamped cmd_pose_last;  
     std_msgs::UInt8 status_value;
     px4_autonomy::Position pose_cal;
+    px4_autonomy::Velocity vel_cal;
 
     /*variable for position control type in px4*/
     float x_record = 0.0;
@@ -187,9 +189,16 @@ int main(int argc, char **argv)
         pose_cal.y = pos(1);
         pose_cal.z = pos(2);
         pose_cal.yaw = yaw;
-        if(pose_cal.yaw > 1.57) pose_cal.yaw = yaw - 6.283;
-        else if(pose_cal.yaw < -1.57) pose_cal.yaw = yaw + 6.283;
+        if(pose_cal.yaw > 3.141593) pose_cal.yaw = yaw - 6.283;
+        else if(pose_cal.yaw < -3.141593) pose_cal.yaw = yaw + 6.283;
         pose_pub.publish(pose_cal);
+
+        vel_cal.x = vel(0);
+        vel_cal.y = vel(1);
+        vel_cal.z = vel(2);
+        vel_cal.yaw_rate = yaw_rate;
+        vel_pub.publish(vel_cal);
+
 
         /* Velocity control type */
         if(control_type == 0.f)
@@ -857,7 +866,8 @@ void chatterCallback_local_vel(const geometry_msgs::TwistStamped &msg)
     vel_stamp = msg.header.stamp.toSec();
     vel(0) = msg.twist.linear.x;
     vel(1) = msg.twist.linear.y;
-    vel(2) = msg.twist.linear.z;    
+    vel(2) = msg.twist.linear.z;
+    yaw_rate = msg.twist.angular.z;
 }
 
 void chatterCallback_mode(const mavros_msgs::State &msg)
