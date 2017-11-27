@@ -1,0 +1,35 @@
+#coodinate type
+#0 stands for enu
+#1 stands for head coodinate, forward x, left y, up zz
+coor_type: 0 #!!!!only enu is supported for now
+
+#control type in px4
+#0 stands for velocity control
+#1 stands for position control
+#NOTE: you must blacklist another type in mavros/mavros/launch/px4_pluginlists.yaml
+control_type: 0 #position control is more stable!
+
+#Take off height
+toff_height: 1.0 # should be positive
+#The height to judge if landed,  a litte larger than the real land height is recomended
+
+land_height: 0.16 # should be positive, a litte larger than the real land height is recomended
+
+#maximum velocity
+max_vx: 2.0
+max_vy: 2.0
+max_vz: 2.0
+max_yawrate: 1.0
+
+#PID parameters for position tracker
+pt_kp_xy: 0.1
+pt_ki_xy: 0.02
+pt_kd_xy: 0.004
+
+pt_kp_z: 0.1
+pt_ki_z: 0.02
+pt_kd_z: 0.004
+
+pt_kp_yaw: 0.05
+pt_ki_yaw: 0.003
+pt_kd_yaw: 0.0005

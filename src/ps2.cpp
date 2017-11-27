@@ -5,6 +5,7 @@
 #include <px4_autonomy/Velocity.h>
 #include <px4_autonomy/Takeoff.h>
 #include <std_msgs/UInt8.h>
+#include <std_msgs/Float32.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <mavros_msgs/CommandBool.h>
 #include <mavros_msgs/SetMode.h>
@@ -42,11 +43,15 @@ float current_yaw = 0.0;
 
 float current_vx = 0.0;
 float current_vy = 0.0;
+float current_vz = 0.0;
 
 float cmd_vx = 0.0;
 float cmd_vy = 0.0;
 float cmd_vz = 0.0;
 float cmd_yr = 0.0;
+
+px4_autonomy::Velocity ps2_vel;
+px4_autonomy::Velocity body_vel;
 
 void chatterCallback_status(const std_msgs::UInt8 &msg)
 {
@@ -63,15 +68,19 @@ void chatterCallback_pose(const px4_autonomy::Position &msg)
 
 void chatterCallback_vel(const px4_autonomy::Velocity &msg)
 {
-    current_vx = msg.x*sin(current_yaw + PI_2) + msg.y*cos(current_yaw + PI_2);
-    current_vy = msg.x*cos(current_yaw + PI_2) - msg.y*sin(current_yaw + PI_2);
+    current_vx = msg.x*cos(current_yaw) + msg.y*sin(current_yaw);
+    current_vy = -msg.x*sin(current_yaw) + msg.y*cos(current_yaw);
+    current_vz = msg.z;
     //cout<<"v("<<current_vx<<","<<current_vy<<")"<<endl;
+    body_vel.x = current_vx;
+    body_vel.y = current_vy;
+    body_vel.z = current_vz;
 }
 
 void chatterCallback_joy(const sensor_msgs::Joy::ConstPtr& joy)
 {
-    cmd_vx = VX_LIMIT * joy->axes[2];
-    cmd_vy = VY_LIMIT * joy->axes[5];
+    cmd_vx = VX_LIMIT * joy->axes[5];
+    cmd_vy = VY_LIMIT * joy->axes[2];
     cmd_vz = VZ_LIMIT * joy->axes[1];
     cmd_yr = YR_LIMIT * joy->axes[0];
     if(joy->buttons[1] == 1 && joy->buttons[2] == 0)
@@ -84,6 +93,11 @@ void chatterCallback_joy(const sensor_msgs::Joy::ConstPtr& joy)
     }
     else
         ps2_flag = FLY;
+
+    ps2_vel.x = cmd_vx;
+    ps2_vel.y = cmd_vy;
+    ps2_vel.z = cmd_vz;
+
 }
 
 int main(int argc, char **argv)
@@ -115,12 +129,15 @@ int main(int argc, char **argv)
     ros::Subscriber joy_sub = nh.subscribe("/joy",1,chatterCallback_joy);
 
     ros::Publisher pose_pub = nh.advertise<px4_autonomy::Position>("/px4/cmd_pose", 1); 
-    ros::Publisher vel_pub = nh.advertise<px4_autonomy::Velocity>("/px4/cmd_vel", 1); 
+    ros::Publisher vel_pub = nh.advertise<px4_autonomy::Velocity>("/px4/cmd_vel", 1);
+    ros::Publisher body_vel_pub = nh.advertise<px4_autonomy::Velocity>("/px4/body_vel", 1);  
+    ros::Publisher ps2_vel_pub = nh.advertise<px4_autonomy::Velocity>("/px4/ps2_vel", 1); 
     ros::Publisher takeoff_pub = nh.advertise<px4_autonomy::Takeoff>("/px4/cmd_takeoff", 1); 
 
     px4_autonomy::Position pose;
     px4_autonomy::Velocity vel;
     px4_autonomy::Takeoff tf_val;
+    
 
     ros::Rate loop_rate(20);
 
@@ -149,7 +166,6 @@ int main(int argc, char **argv)
                 last_request = ros::Time::now();
             }
         }
-        /////////////////////////////
 
         switch(status)
         {
@@ -169,8 +185,8 @@ int main(int argc, char **argv)
                 if(ps2_flag == FLY)
                 {
                     vel.header.stamp = ros::Time::now();
-                    vel.x = -cmd_vx*sin(current_yaw) + cmd_vy*cos(current_yaw);
-                    vel.y = cmd_vx*cos(current_yaw) + cmd_vy*sin(current_yaw);
+                    vel.x = cmd_vx*cos(current_yaw) - cmd_vy*sin(current_yaw);
+                    vel.y = cmd_vx*sin(current_yaw) + cmd_vy*cos(current_yaw);
                     vel.z = cmd_vz;
                     vel.yaw_rate = cmd_yr;
                     vel_pub.publish(vel);
@@ -186,8 +202,8 @@ int main(int argc, char **argv)
             }
         }
 
-
-    	
+        ps2_vel_pub.publish(ps2_vel);
+        body_vel_pub.publish(body_vel);
 
     	ros::spinOnce();
         loop_rate.sleep();
