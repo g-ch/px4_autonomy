@@ -35,6 +35,8 @@ Eigen::Vector3d vel(0,0,0);
 Eigen::Quaterniond att;
 double yaw = 0.0;
 double yaw_rate = 0.0;
+double pitch = 0.0;
+double roll = 0.0;
 
 Eigen::Vector3d pos_sp(0,0,0);
 Eigen::Vector3d vel_sp(0,0,0);
@@ -189,6 +191,8 @@ int main(int argc, char **argv)
         pose_cal.y = pos(1);
         pose_cal.z = pos(2);
         pose_cal.yaw = yaw;
+        pose_cal.roll = roll;
+        pose_cal.pitch = pitch;
         if(pose_cal.yaw > 3.141593) pose_cal.yaw = yaw - 6.283;
         else if(pose_cal.yaw < -3.141593) pose_cal.yaw = yaw + 6.283;
         pose_pub.publish(pose_cal);
@@ -859,6 +863,9 @@ void chatterCallback_local_pose(const geometry_msgs::PoseStamped &msg)
    // tf::Matrix3x3 m(q);
    // m.getRPY(roll, pitch, yaw);
    yaw = atan2(2*att.y()*att.x() - 2*att.z()*att.w(), -2*att.y()*att.y() - 2*att.w()*att.w() +1 ) + PI;
+
+   pitch = asin(2*att.z()*att.x()-2*att.y()*att.w());
+   roll = atan2(2*att.x()*att.w()+2*att.y()*att.z(), 1-2*att.y()*att.y()-2*att.x()*att.x());
 }
 
 void chatterCallback_local_vel(const geometry_msgs::TwistStamped &msg)

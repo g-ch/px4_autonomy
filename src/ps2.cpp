@@ -18,7 +18,6 @@
 #define YR_LIMIT 1.0
 #define PI 3.14159265
 
-
 using namespace std;
 
 enum control_flag
@@ -235,6 +234,7 @@ int main(int argc, char **argv)
                 if(ps2_flag == FLY)
                 {
                     vel.header.stamp = ros::Time::now();
+                    /* For simulation, the coordinate need to be changed*/
                     vel.x = (cmd_vx*cos(current_yaw) - cmd_vy*sin(current_yaw)) * vel_scale;
                     vel.y = (cmd_vx*sin(current_yaw) + cmd_vy*cos(current_yaw)) * vel_scale;
                     vel.z = cmd_vz;
