@@ -106,7 +106,7 @@ void chatterCallback_obstacle_dist(const std_msgs::Float32 &msg)
 {
     obstecle_distance = msg.data;
     if(obstecle_distance > 5.0) vel_scale = 1.0;
-    else if(obstecle_distance > 1.5) vel_scale = 0.7 - (5.0 - obstecle_distance) * 0.2;
+    else if(obstecle_distance > 1.5) vel_scale = 0.35 - (5.0 - obstecle_distance) * 0.1;
     else vel_scale = 0.0; 
 }
 
@@ -188,11 +188,12 @@ int main(int argc, char **argv)
             }
         }
 
-        /*Two Direction for Obstecle Avoidance*/
+        /*Two Direction for Obstacle Avoidance*/
         float current_v = vec_length_2d(current_vx, current_vy); 
         float control_v = vec_length(cmd_vx, cmd_vy, cmd_vz);
+        
 
-        if(current_v < 0.05 && control_v < 0.01) //avoid noise when hovering
+        if(current_v < 0.05 && control_v < 0.01) //avoid noise when hovering, parameters need to be tested and set
         {
             ps2_vel.x = 1.f;
             ps2_vel.y = 0.f;
@@ -214,6 +215,9 @@ int main(int argc, char **argv)
             ps2_vel.y = body_vel.y;
             ps2_vel.z = body_vel.z;
         }
+
+        float emgcy_vx, emgcy_vy, emgcy_vz;
+        //if()
 
         /*Control Status*/
         switch(status)
