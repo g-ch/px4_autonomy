@@ -550,7 +550,7 @@ int main(int argc, char **argv)
                         cmd_pose.pose.position.y = y_record;
                     }
 
-                    float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;
+                    float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;  //TODO: FUSE LANDDECTOR
                     if(dec_height > -0.2f) dec_height = -0.2f;
                     else if(dec_height < -0.6f) dec_height = -0.6f;
 
