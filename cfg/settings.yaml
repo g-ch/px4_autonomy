@@ -7,7 +7,7 @@ coor_type: 0 #!!!!only enu is supported for now
 #0 stands for velocity control
 #1 stands for position control
 #NOTE: you must blacklist another type in mavros/mavros/launch/px4_pluginlists.yaml
-control_type: 0 #position control is more stable!
+control_type: 1 #position control is more stable!
 
 #Take off height
 toff_height: 1.0 # should be positive

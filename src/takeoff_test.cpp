@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 
 	    			if(counter == 200 || counter == 600) record_bool = true;
 
-	    			if(counter < 200)  //v
+	    			if(counter < 200)  //v, 5s
 	    			{
 	    				vel.header.stamp = ros::Time::now();
 		    			vel.x = 0.2;

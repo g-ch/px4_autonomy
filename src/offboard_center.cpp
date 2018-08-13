@@ -155,7 +155,12 @@ int main(int argc, char **argv)
     bool tkoff_record = true;
     int control_state = 0;
     int control_state_last = 0;
+
     int land_counter = 0;
+    const int land_counter_max = 20;
+    float delt_height_buff[land_counter_max];
+    float height_record = 0.f;
+
     float last_height = 0.0;
     float takeoff_z_set = 0.f;
 
@@ -386,6 +391,9 @@ int main(int argc, char **argv)
         }
 
         /*Position control type*/
+
+        if(status != 3) height_record = pos(2);
+
         else if(control_type == 1.f)
         {
             switch(status)
@@ -430,7 +438,7 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.y = pos(1);
 
                     if(pos(2) < land_height + 0.2)
-                        cmd_pose.pose.position.z = pos(2) - 0.5;
+                        cmd_pose.pose.position.z = pos(2) - 1.0;
 
                     else
                         cmd_pose.pose.position.z = z_record;
@@ -550,7 +558,7 @@ int main(int argc, char **argv)
                         cmd_pose.pose.position.y = y_record;
                     }
 
-                    float dec_height = 0.f - (pos(2) + 0.1f)* 1.1f;  //TODO: FUSE LANDDECTOR
+                    float dec_height = 0.f - (pos(2) + 0.15f) * 1.1f; 
                     if(dec_height > -0.2f) dec_height = -0.2f;
                     else if(dec_height < -0.6f) dec_height = -0.6f;
 
@@ -580,7 +588,29 @@ int main(int argc, char **argv)
                         land_counter = 0;
                     } */
 
-                    if(pos(2) < land_height) 
+                    /* Land Detector*/
+                    delt_height_buff[land_counter] = dec_height;
+                    land_counter ++;
+
+                    bool if_landed = false;
+
+                    if(land_counter >= land_counter_max)
+                    {
+                        land_counter = 0;
+
+                        float avrg_delt = 0.0;
+                        for(int i = 0; i < land_counter_max; i++)
+                        {
+                            avrg_delt += delt_height_buff[i];
+                        }
+                        avrg_delt = avrg_delt / land_counter_max;
+
+                        if(height_record - pos(2) > avrg_delt / 5.f) if_landed = true;
+
+                        height_record = pos(2);
+                    }
+
+                    if(pos(2) < land_height + 0.3 && if_landed) //if(pos(2) < land_height)          
                     {
                         status = 1;
                         if_record = true;
