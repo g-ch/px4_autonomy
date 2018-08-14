@@ -208,7 +208,8 @@ int main(int argc, char **argv)
         vel_cal.yaw_rate = yaw_rate;
         vel_pub.publish(vel_cal);
 
-
+        if(status != 3) height_record = pos(2);
+        
         /* Velocity control type */
         if(control_type == 0.f)
         {
@@ -391,8 +392,6 @@ int main(int argc, char **argv)
         }
 
         /*Position control type*/
-
-        if(status != 3) height_record = pos(2);
 
         else if(control_type == 1.f)
         {
