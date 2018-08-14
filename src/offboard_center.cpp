@@ -551,13 +551,13 @@ int main(int argc, char **argv)
 
                     if(lidar_main_enabled)
                     {
-                        float add_max = 1.0;
+                        float add_max = 0.5;
                         if(lidar_height < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
                         else cmd_pose.pose.position.z = pos(2) + (toff_height - lidar_height) / (toff_height / 2.0) * add_max;
                     }
                     else
                     {
-                        float add_max = 1.0;
+                        float add_max = 0.5;
                         if(pos(2) < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
                         else cmd_pose.pose.position.z = pos(2) + (toff_height - pos(2)) / (toff_height / 2.0) * add_max;
 
@@ -576,11 +576,11 @@ int main(int argc, char **argv)
 
                     if(lidar_main_enabled)
                     {
-                        if(lidar_height > toff_height - 0.2f) take_off_finished = true;
+                        if(lidar_height > toff_height - 0.1f) take_off_finished = true;
                     }
                     else
                     {
-                        if(pos(2) > toff_height - 0.2f) take_off_finished = true;
+                        if(pos(2) > toff_height - 0.1f) take_off_finished = true;
                     }
 
 
@@ -652,7 +652,7 @@ int main(int argc, char **argv)
                     }
 
                     if(dec_height > -0.2f) dec_height = -0.2f;
-                    else if(dec_height < -0.6f) dec_height = -0.6f;
+                    else if(dec_height < -0.5f) dec_height = -0.5f;
 
                     cmd_pose.pose.position.z = pos(2) + dec_height;
 
@@ -851,7 +851,9 @@ int main(int argc, char **argv)
 
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
-                    cmd_pose.pose.position.z = z_record;
+
+                    if(lidar_main_enabled) cmd_pose.pose.position.z = pos(2);
+                    else cmd_pose.pose.position.z = z_record;
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);

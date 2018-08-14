@@ -99,7 +99,7 @@ int main(int argc, char **argv)
 	    				vel.header.stamp = ros::Time::now();
 		    			vel.x = 0.2;
 		    			vel.y = 0.0;
-		    			vel.z = 0;
+		    			vel.z = 0.0;
 		    			vel.yaw_rate = 0.0;
 		    			vel_pub.publish(vel);
 	    			}
