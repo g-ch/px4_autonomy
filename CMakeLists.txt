@@ -39,6 +39,7 @@ target_link_libraries(offboard_center
   ${catkin_LIBRARIES}
 )
 
+add_dependencies(offboard_center px4_autonomy_gen)
 
 #add_executable(test1
 #  src/test.cpp
@@ -55,6 +56,8 @@ add_executable(takeoff_test
 target_link_libraries(takeoff_test
   ${catkin_LIBRARIES}
 )
+
+add_dependencies(takeoff_test px4_autonomy_gen)
 
 #add_executable(ps2
 #  src/ps2.cpp
