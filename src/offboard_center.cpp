@@ -480,7 +480,7 @@ int main(int argc, char **argv)
                         yaw_record = yaw;
 
                         cout<<"z_rec"<<z_record<<endl;
-                        takeoff_z_set = z_record;
+                        //takeoff_z_set = z_record;
 
                         if_record = false;
                     }
@@ -503,12 +503,16 @@ int main(int argc, char **argv)
                     else if(add_height < 0.4f) add_height = 0.4f;
                     cmd_pose.pose.position.z = pos(2) + add_height;*/
 
-                    if(first_takeoff) takeoff_z_set += 0.06;
-                    else takeoff_z_set += 0.03;
+                    // if(first_takeoff) takeoff_z_set += 0.06 * 20 / LOOP_RATE;
+                    // else takeoff_z_set += 0.03 * 20 / LOOP_RATE;
 
-                    cmd_pose.pose.position.z = takeoff_z_set;
+                    //cmd_pose.pose.position.z = takeoff_z_set;
 
-                    if(cmd_pose.pose.position.z > toff_height) cmd_pose.pose.position.z = toff_height;
+                    float add_max = 1.0;
+                    if(pos(2) < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
+                    else cmd_pose.pose.position.z = pos(2) + (toff_height - pos(2)) / (toff_height / 2.0) * add_max;
+
+                    if(cmd_pose.pose.position.z > toff_height + 0.1) cmd_pose.pose.position.z = toff_height + 0.1;
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);

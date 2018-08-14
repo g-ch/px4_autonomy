@@ -39,13 +39,14 @@ target_link_libraries(offboard_center
   ${catkin_LIBRARIES}
 )
 
-add_executable(test1
-  src/test.cpp
-)
 
-target_link_libraries(test1
-  ${catkin_LIBRARIES}
-)
+#add_executable(test1
+#  src/test.cpp
+#)
+
+#target_link_libraries(test1
+#  ${catkin_LIBRARIES}
+#)
 
 add_executable(takeoff_test
   src/takeoff_test.cpp
@@ -55,10 +56,10 @@ target_link_libraries(takeoff_test
   ${catkin_LIBRARIES}
 )
 
-add_executable(ps2
-  src/ps2.cpp
-)
+#add_executable(ps2
+#  src/ps2.cpp
+#)
 
-target_link_libraries(ps2
-  ${catkin_LIBRARIES}
-)
+#target_link_libraries(ps2
+#  ${catkin_LIBRARIES}
+#)

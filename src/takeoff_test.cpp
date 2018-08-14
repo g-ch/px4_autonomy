@@ -44,7 +44,7 @@ int wait(int &counter, const int &limitation)
 int main(int argc, char **argv)
 {
     /* code for main function */
-    ros::init(argc, argv, "test1");
+    ros::init(argc, argv, "takeoff_test");
     ros::NodeHandle nh;
 
 
