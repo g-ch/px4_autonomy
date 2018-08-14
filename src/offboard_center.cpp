@@ -12,6 +12,7 @@
 #include <Eigen/Geometry>
 #include "tf/message_filter.h"
 #include "tf/transform_datatypes.h"
+#include <sensor_msgs/Range.h>
 
 using namespace std;
 
@@ -25,6 +26,7 @@ void chatterCallback_mode(const mavros_msgs::State &msg);
 void chatterCallback_cmd_pose(const px4_autonomy::Position &msg);
 void chatterCallback_cmd_vel(const px4_autonomy::Velocity &msg);
 void chatterCallback_cmd_takeoff(const px4_autonomy::Takeoff &msg);
+void chatterCallback_range(const sensor_msgs::Range &msg);
 int watch_dog(int &time_bone);
 void set_straint_abs(float &v, float limit);
 float pid_calculate(float &kp, float &ki, float &kd, float &error, float &error_last, float &error_acc);
@@ -49,7 +51,7 @@ bool land_flag = false;
 bool v_sp_flag = false;
 bool p_sp_flag = false;
 
-bool first_takeoff = true; //to solve height problem caused by barometer during first take off process
+// bool first_takeoff = true; //to solve height problem caused by barometer during first take off process
 
 /* status: very important variable.
 0: waiting for offboard mode 1: wait on ground 
@@ -71,6 +73,11 @@ double vel_sp_stamp_last = 0.0;
 bool offboard_ready = false;
 int dog_feed_times = 0; //to adjust loop rate and dog feeding rate
 unsigned int offboard_flight_times = 0;
+
+float lidar_height = 0.f;
+float lidar_valid_height;
+float lidar_offset_z;
+
 
 int main(int argc, char **argv)
 {
@@ -96,6 +103,12 @@ int main(int argc, char **argv)
     float pt_kp_yaw;
     float pt_ki_yaw;
     float pt_kd_yaw;
+    float enable_lidar_main_height;
+
+    // Global: float lidar_valid_height;
+    // Global: float lidar_offset_z;
+
+    bool lidar_main_enabled = false;
 
     dog_feed_times = LOOP_RATE/DOG_RATE;
     float period =  1.f/(float)(LOOP_RATE); 
@@ -118,7 +131,11 @@ int main(int argc, char **argv)
     nh.getParam("/offboard_center/pt_ki_yaw", pt_ki_yaw);
     nh.getParam("/offboard_center/pt_kd_yaw", pt_kd_yaw);
     nh.getParam("/offboard_center/control_type", control_type);
-    
+    nh.getParam("/offboard_center/lidar_valid_height", lidar_valid_height);
+    nh.getParam("/offboard_center/lidar_offset_z", lidar_offset_z);
+    nh.getParam("/offboard_center/enable_lidar_main_height", enable_lidar_main_height);
+
+    if(enable_lidar_main_height > 0.1) lidar_main_enabled = true;
 
     /* handle topics */
     ros::Subscriber local_pose_sub = nh.subscribe("/mavros/local_position/pose", 1,chatterCallback_local_pose);
@@ -127,6 +144,7 @@ int main(int argc, char **argv)
     ros::Subscriber pose_sp_sub = nh.subscribe("/px4/cmd_pose", 1,chatterCallback_cmd_pose);
     ros::Subscriber vel_sp_sub = nh.subscribe("/px4/cmd_vel", 1,chatterCallback_cmd_vel);
     ros::Subscriber take_off_sub = nh.subscribe("/px4/cmd_takeoff", 1,chatterCallback_cmd_takeoff);
+    ros::Subscriber diatance_sensor_sub = nh.subscribe("/range", 1, chatterCallback_range);
 
     ros::Publisher vel_sp_pub = nh.advertise<geometry_msgs::TwistStamped>("mavros/setpoint_velocity/cmd_vel", 1);  
     ros::Publisher pose_sp_pub = nh.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 1);
@@ -157,12 +175,12 @@ int main(int argc, char **argv)
     int control_state_last = 0;
 
     int land_counter = 0;
-    const int land_counter_max = 20;
+    const int land_counter_max = LOOP_RATE / 2;
     float delt_height_buff[land_counter_max];
     float height_record = 0.f;
 
     float last_height = 0.0;
-    float takeoff_z_set = 0.f;
+    // float takeoff_z_set = 0.f;
 
     /* PID storage values */
     float x_error = 0.0;
@@ -184,9 +202,6 @@ int main(int argc, char **argv)
     float acc_z = 0.0;
     float acc_yaw = 0.0;
 
-
-
-
     /* Main loop */
     while(nh.ok())
     {
@@ -194,7 +209,16 @@ int main(int argc, char **argv)
         /* Publish px4 pose */
         pose_cal.x = pos(0);
         pose_cal.y = pos(1);
-        pose_cal.z = pos(2);
+
+        if(lidar_main_enabled)
+        {
+            pose_cal.z = lidar_height;
+        }
+        else
+        {
+            pose_cal.z = pos(2);
+        }
+
         pose_cal.yaw = yaw;
         pose_cal.roll = roll;
         pose_cal.pitch = pitch;
@@ -208,7 +232,8 @@ int main(int argc, char **argv)
         vel_cal.yaw_rate = yaw_rate;
         vel_pub.publish(vel_cal);
 	
-	if(status != 3) height_record = pos(2);
+	   if(status != 3 && !lidar_main_enabled) height_record = pos(2);
+       else if(status != 3 && lidar_main_enabled) height_record = lidar_height;
 
         /* Velocity control type */
         if(control_type == 0.f)
@@ -439,7 +464,7 @@ int main(int argc, char **argv)
                         cmd_pose.pose.position.z = pos(2) - 1.0;
 
                     else
-                        cmd_pose.pose.position.z = z_record;
+                        cmd_pose.pose.position.z = z_record; // In case someone 
 
                     cmd_pose.pose.orientation.x = 0.0;
                     cmd_pose.pose.orientation.y = 0.0;
@@ -483,17 +508,35 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    if(pos(2) < 0.2)
+                    if(lidar_main_enabled)
                     {
-                        cmd_pose.pose.position.x = pos(0);
-                        cmd_pose.pose.position.y = pos(1);
-                        tkoff_record = true;
+                        if(lidar_height < 0.1)
+                        {
+                            cmd_pose.pose.position.x = pos(0);
+                            cmd_pose.pose.position.y = pos(1);
+                            tkoff_record = true;
+                        }
+                        else
+                        {
+                            cmd_pose.pose.position.x = x_record;
+                            cmd_pose.pose.position.y = y_record;
+                        }
                     }
                     else
                     {
-                        cmd_pose.pose.position.x = x_record;
-                        cmd_pose.pose.position.y = y_record;
+                        if(pos(2) < 0.2)
+                        {
+                            cmd_pose.pose.position.x = pos(0);
+                            cmd_pose.pose.position.y = pos(1);
+                            tkoff_record = true;
+                        }
+                        else
+                        {
+                            cmd_pose.pose.position.x = x_record;
+                            cmd_pose.pose.position.y = y_record;
+                        }
                     }
+                    
                     
 
                     /*float add_height = (toff_height +0.1f - pos(2)) * 1.2f;
@@ -506,11 +549,21 @@ int main(int argc, char **argv)
 
                     //cmd_pose.pose.position.z = takeoff_z_set;
 
-                    float add_max = 1.0;
-                    if(pos(2) < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
-                    else cmd_pose.pose.position.z = pos(2) + (toff_height - pos(2)) / (toff_height / 2.0) * add_max;
+                    if(lidar_main_enabled)
+                    {
+                        float add_max = 1.0;
+                        if(lidar_height < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
+                        else cmd_pose.pose.position.z = pos(2) + (toff_height - lidar_height) / (toff_height / 2.0) * add_max;
+                    }
+                    else
+                    {
+                        float add_max = 1.0;
+                        if(pos(2) < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
+                        else cmd_pose.pose.position.z = pos(2) + (toff_height - pos(2)) / (toff_height / 2.0) * add_max;
 
-                    if(cmd_pose.pose.position.z > toff_height + 0.1) cmd_pose.pose.position.z = toff_height + 0.1;
+                        if(cmd_pose.pose.position.z > toff_height + 0.1) cmd_pose.pose.position.z = toff_height + 0.1;
+                    }
+                    
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
                     //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
@@ -519,13 +572,24 @@ int main(int argc, char **argv)
                     cmd_pose.pose.orientation.z = sin(yaw_record/2.f);
                     cmd_pose.pose.orientation.w = cos(yaw_record/2.f);
            
+                    bool take_off_finished = false;
 
-                    if(pos(2) > toff_height - 0.2f )
+                    if(lidar_main_enabled)
+                    {
+                        if(lidar_height > toff_height - 0.2f) take_off_finished = true;
+                    }
+                    else
+                    {
+                        if(pos(2) > toff_height - 0.2f) take_off_finished = true;
+                    }
+
+
+                    if(take_off_finished)
                     {
                         status = 5;
-                        takeoff_z_set = 0.f;
+                        // takeoff_z_set = 0.f;
                         if_record = true;
-                        first_takeoff = false;
+                        // first_takeoff = false;
                     } 
 
                     pose_sp_pub.publish(cmd_pose);
@@ -549,18 +613,44 @@ int main(int argc, char **argv)
                         if_record = false;
                     }
 
-                    if(pos(2) < land_height + 0.05)
+                    if(lidar_main_enabled)
                     {
-                         cmd_pose.pose.position.x = pos(0);
-                         cmd_pose.pose.position.y = pos(1);
+                        if(lidar_height < land_height + 0.05)
+                        {
+                             cmd_pose.pose.position.x = pos(0);
+                             cmd_pose.pose.position.y = pos(1);
+                        }
+                        else
+                        {
+                            cmd_pose.pose.position.x = x_record;
+                            cmd_pose.pose.position.y = y_record;
+                        }
                     }
                     else
                     {
-                        cmd_pose.pose.position.x = x_record;
-                        cmd_pose.pose.position.y = y_record;
+                        if(pos(2) < land_height + 0.05)
+                        {
+                             cmd_pose.pose.position.x = pos(0);
+                             cmd_pose.pose.position.y = pos(1);
+                        }
+                        else
+                        {
+                            cmd_pose.pose.position.x = x_record;
+                            cmd_pose.pose.position.y = y_record;
+                        }
                     }
 
-                    float dec_height = 0.f - (pos(2) + 0.15f) * 1.1f; 
+                    float dec_height;
+
+                    if(lidar_main_enabled)
+                    {
+                        dec_height = 0.f - (lidar_height + 0.15f) * 1.1f;
+                    }
+                    else
+                    {
+                        dec_height = 0.f - (pos(2) + 0.15f) * 1.1f; 
+                    }
+
                     if(dec_height > -0.2f) dec_height = -0.2f;
                     else if(dec_height < -0.6f) dec_height = -0.6f;
 
@@ -607,12 +697,30 @@ int main(int argc, char **argv)
                         }
                         avrg_delt = avrg_delt / land_counter_max;
 
-                        if(height_record - pos(2) > avrg_delt / 5.f) if_landed = true;
-
-                        height_record = pos(2);
+                        if(lidar_main_enabled)
+                        {
+                            if(height_record - lidar_height < -avrg_delt / 5.f) if_landed = true;
+                            height_record = lidar_height;
+                        }
+                        else
+                        {
+                            if(height_record - pos(2) < -avrg_delt / 5.f) if_landed = true;
+                            height_record = pos(2);
+                        }
                     }
 
-                    if(pos(2) < land_height + 0.3 && if_landed) //if(pos(2) < land_height)          
+                    bool land_finished = false;
+
+                    if(lidar_main_enabled)
+                    {
+                        if(lidar_height < land_height + 0.1 && if_landed) land_finished = true;
+                    }
+                    else
+                    {
+                       if(pos(2) < land_height + 0.3 && if_landed) land_finished = true; 
+                    }
+
+                    if(land_finished) //if(pos(2) < land_height)          
                     {
                         status = 1;
                         if_record = true;
@@ -687,7 +795,9 @@ int main(int argc, char **argv)
                         {
                             cmd_pose.pose.position.x = pos_sp(0);
                             cmd_pose.pose.position.y = pos_sp(1);
-                            cmd_pose.pose.position.z = pos_sp(2);
+
+                            if(lidar_main_enabled) cmd_pose.pose.position.z = pos_sp(2) + pos(2) - lidar_height;
+                            else cmd_pose.pose.position.z = pos_sp(2);
 
                             //tf::Quaternion cmd_q(yaw_sp, pitch_record, roll_record);
                             //tf::quaternionTFToMsg(cmd_q, cmd_pose.pose.orientation);
@@ -950,4 +1060,12 @@ void chatterCallback_cmd_takeoff(const px4_autonomy::Takeoff &msg)
         take_off_flag = false;
         land_flag = false;
     }
+}
+
+void chatterCallback_range(const sensor_msgs::Range &msg)
+{
+    if(msg.range > lidar_valid_height)
+        lidar_height = msg.range - lidar_offset_z;
+    else
+        lidar_height = 0.f; //lidar_valid_height - lidar_offset_z;
 }
