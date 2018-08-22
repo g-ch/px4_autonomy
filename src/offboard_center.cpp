@@ -871,10 +871,7 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    if(lidar_main_enabled)
-                    {
-                        cmd_pose.pose.position.z = pos(2);
-                    } 
+                    if(lidar_main_enabled) cmd_pose.pose.position.z = z_record; //pos(2);
                     else cmd_pose.pose.position.z = z_record;
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
