@@ -78,6 +78,7 @@ float lidar_height = 0.f;
 float lidar_valid_height;
 float lidar_offset_z;
 
+bool enable_fake_mode = false;
 
 int main(int argc, char **argv)
 {
@@ -104,6 +105,7 @@ int main(int argc, char **argv)
     float pt_ki_yaw;
     float pt_kd_yaw;
     float enable_lidar_main_height;
+
 
     // Global: float lidar_valid_height;
     // Global: float lidar_offset_z;
@@ -134,8 +136,16 @@ int main(int argc, char **argv)
     nh.getParam("/offboard_center/lidar_valid_height", lidar_valid_height);
     nh.getParam("/offboard_center/lidar_offset_z", lidar_offset_z);
     nh.getParam("/offboard_center/enable_lidar_main_height", enable_lidar_main_height);
+    nh.getParam("/offboard_center/enable_fake_mode", enable_fake_mode_f);
 
-    if(enable_lidar_main_height > 0.1) lidar_main_enabled = true;
+    if(enable_lidar_main_height > 0.1) lidar_main_enabled  = true;
+    if(lidar_main_enabled) ROS_INFO("lidar main enabled!!!");
+
+    if(enable_fake_mode_f > 0.1) {
+        enable_fake_mode = true;
+        offboard_ready = false;
+        ROS_INFO("FAKE MODE!!!");   
+    }
 
     /* handle topics */
     ros::Subscriber local_pose_sub = nh.subscribe("/mavros/local_position/pose", 1,chatterCallback_local_pose);
@@ -195,6 +205,8 @@ int main(int argc, char **argv)
     float yaw_error = 0.0;
     float yaw_error_1ast = 0.0;
     float yaw_error_acc = 0.0;
+
+    float z_fuse_error = 0.f;
 
     /* Variables for velocity setpoint in position  control mode*/
     float acc_x = 0.0;
@@ -551,13 +563,13 @@ int main(int argc, char **argv)
 
                     if(lidar_main_enabled)
                     {
-                        float add_max = 0.5;
+                        float add_max = 0.8;
                         if(lidar_height < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
                         else cmd_pose.pose.position.z = pos(2) + (toff_height - lidar_height) / (toff_height / 2.0) * add_max;
                     }
                     else
                     {
-                        float add_max = 0.5;
+                        float add_max = 0.8;
                         if(pos(2) < toff_height / 2.0) cmd_pose.pose.position.z = pos(2) + add_max;
                         else cmd_pose.pose.position.z = pos(2) + (toff_height - pos(2)) / (toff_height / 2.0) * add_max;
 
@@ -758,7 +770,8 @@ int main(int argc, char **argv)
                                 // z_record = pos(2);
                                 //x_record = cmd_pose_last.pose.position.x;
                                 //y_record = cmd_pose_last.pose.position.y;
-                                z_record = cmd_pose_last.pose.position.z;
+                                z_record = cmd_pose_last.pose.position.z; 
+
                                 yaw_record = yaw;
 
                                 acc_x = 0.0;
@@ -770,6 +783,12 @@ int main(int argc, char **argv)
 
                                 cout<<"z_rec"<<z_record<<endl;
                             }
+
+                            // if(lidar_main_enabled)
+                            // {
+                            //     // To correct fuse error from px4
+
+                            // }
 
                             acc_x += vel_sp(0) * period; 
                             acc_y += vel_sp(1) * period;
@@ -852,7 +871,10 @@ int main(int argc, char **argv)
                     cmd_pose.pose.position.x = x_record;
                     cmd_pose.pose.position.y = y_record;
 
-                    if(lidar_main_enabled) cmd_pose.pose.position.z = pos(2);
+                    if(lidar_main_enabled)
+                    {
+                        cmd_pose.pose.position.z = pos(2);
+                    } 
                     else cmd_pose.pose.position.z = z_record;
 
                     //tf::Quaternion cmd_q(yaw_record, pitch_record, roll_record);
@@ -1025,6 +1047,8 @@ void chatterCallback_mode(const mavros_msgs::State &msg)
 {
     if(msg.mode=="OFFBOARD") offboard_ready=true;
     else offboard_ready=false;
+
+    if(enable_fake_mode) offboard_ready = true;
 }
 
 void chatterCallback_cmd_pose(const px4_autonomy::Position &msg)
