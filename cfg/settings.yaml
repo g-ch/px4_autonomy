@@ -10,10 +10,10 @@ coor_type: 0 #!!!!only enu is supported for now
 control_type: 1 #position control is more stable!
 
 #Take off height
-toff_height: 1.0 # should be positive
+toff_height: 0.8 # should be positive
 #The height to judge if landed,  a litte larger than the real land height is recomended
 
-land_height: 0.1 # should be positive, a litte larger than the real land height is recomended
+land_height: 0.43 # should be positive, a litte larger than the real land height is recomended
 
 #maximum velocity
 max_vx: 2.0
@@ -39,4 +39,4 @@ lidar_valid_height: 0.31
 lidar_offset_z: 0.1
 
 # !!! Don't unlock uav in fake mode
-enable_fake_mode: 1 # 0 false, 1 true , fake mode will be always in offboard mode
+enable_fake_mode: 0.0 # 0 false, 1 true , fake mode will be always in offboard mode

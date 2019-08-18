@@ -105,7 +105,7 @@ int main(int argc, char **argv)
     float pt_ki_yaw;
     float pt_kd_yaw;
     float enable_lidar_main_height;
-
+    float enable_fake_mode_f;
 
     // Global: float lidar_valid_height;
     // Global: float lidar_offset_z;
@@ -143,7 +143,7 @@ int main(int argc, char **argv)
 
     if(enable_fake_mode_f > 0.1) {
         enable_fake_mode = true;
-        offboard_ready = false;
+        offboard_ready = true;
         ROS_INFO("FAKE MODE!!!");   
     }
 
@@ -185,7 +185,7 @@ int main(int argc, char **argv)
     int control_state_last = 0;
 
     int land_counter = 0;
-    const int land_counter_max = LOOP_RATE / 2;
+    const int land_counter_max = LOOP_RATE;
     float delt_height_buff[land_counter_max];
     float height_record = 0.f;
 
